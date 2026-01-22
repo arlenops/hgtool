@@ -322,17 +322,12 @@ install_nginx_main() {
     echo ""
     
     # 选择安装方式
-    echo "请选择安装方式:"
-    echo ""
-    local options=(
-        "1) 系统包管理器安装 (快速，系统仓库版本)"
-        "2) 官方源安装 (推荐，获取最新稳定版)"
-        "3) 编译安装 (自定义模块，适合高级用户)"
-        "4) 取消"
-    )
-    
     local choice
-    choice=$("$ROOT_DIR/bin/gum" choose "${options[@]}")
+    choice=$(hg_choose "请选择安装方式" \
+        "1) 系统包管理器安装 (快速)" \
+        "2) 官方源安装 (推荐)" \
+        "3) 编译安装 (自定义模块)" \
+        "4) 取消")
     
     case "$choice" in
         "1)"*|*"系统包管理器"*)

@@ -226,17 +226,12 @@ install_caddy_main() {
     echo ""
     
     # 选择安装方式
-    echo "请选择安装方式:"
-    echo ""
-    local options=(
-        "1) 官方脚本安装 (推荐，自动配置源)"
-        "2) 包管理器安装 (apt/yum/dnf)"
-        "3) 二进制安装 (通用，手动下载)"
-        "4) 取消"
-    )
-    
     local choice
-    choice=$("$ROOT_DIR/bin/gum" choose "${options[@]}")
+    choice=$(hg_choose "请选择安装方式" \
+        "1) 官方脚本安装 (推荐)" \
+        "2) 包管理器安装 (apt/yum/dnf)" \
+        "3) 二进制安装 (通用)" \
+        "4) 取消")
     
     case "$choice" in
         "1)"*|*"官方脚本"*)
