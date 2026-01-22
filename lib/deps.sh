@@ -6,7 +6,7 @@
 
 # 版本配置
 GUM_VERSION="0.14.5"
-FZF_VERSION="0.46.1"
+FZF_VERSION="0.67.0"
 
 # 镜像源配置
 GITHUB_MIRROR="https://github.com"
