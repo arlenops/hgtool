@@ -305,7 +305,8 @@ install_nginx_main() {
     echo ""
     
     # 检查是否已安装
-    local current_version=$(check_nginx_installed)
+    local current_version=""
+    current_version=$(check_nginx_installed) || true
     if [ -n "$current_version" ]; then
         echo "  ⚠️  检测到 Nginx 已安装: v${current_version}"
         echo ""

@@ -209,7 +209,8 @@ install_caddy_main() {
     echo ""
     
     # 检查是否已安装
-    local current_version=$(check_caddy_installed)
+    local current_version=""
+    current_version=$(check_caddy_installed) || true
     if [ -n "$current_version" ]; then
         echo "  ⚠️  检测到 Caddy 已安装: $current_version"
         echo ""
