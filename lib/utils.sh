@@ -29,122 +29,64 @@ get_os() {
     echo "$os"
 }
 
+# 获取发行版
+get_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$ID"
+    elif [ -f /etc/redhat-release ]; then
+        echo "centos"
+    else
+        echo "unknown"
+    fi
+}
+
+# 获取包管理器
+get_pkg_manager() {
+    if command -v apt-get >/dev/null 2>&1; then
+        echo "apt"
+    elif command -v yum >/dev/null 2>&1; then
+        echo "yum"
+    elif command -v dnf >/dev/null 2>&1; then
+        echo "dnf"
+    elif command -v pacman >/dev/null 2>&1; then
+        echo "pacman"
+    else
+        echo "unknown"
+    fi
+}
+
 # 检查 Root 权限
 check_root_privileges() {
     if [ "$EUID" -ne 0 ]; then
-        echo "警告: 部分功能需要 root 权限运行"
-        # 不强制退出，只是警告
+        if [ -x "${ROOT_DIR}/bin/gum" ]; then
+            "${ROOT_DIR}/bin/gum" style \
+                --foreground "#FFB86C" \
+                --bold \
+                "⚠ 警告: 部分功能需要 root 权限运行"
+        else
+            echo "警告: 部分功能需要 root 权限运行"
+        fi
+        return 1
     fi
+    return 0
 }
 
-# 检查并安装依赖（gum 和 fzf）
-check_and_install_dependencies() {
-    local bin_dir="$ROOT_DIR/bin"
-    local arch=$(get_arch)
-    local os=$(get_os)
-    
-    # 创建 bin 目录
-    mkdir -p "$bin_dir"
-    
-    # 检查 gum
-    if [ ! -x "$bin_dir/gum" ]; then
-        echo "正在下载 gum..."
-        download_gum "$bin_dir" "$arch" "$os"
+# 强制要求 root 权限
+require_root() {
+    if [ "$EUID" -ne 0 ]; then
+        hg_error "此操作需要 root 权限，请使用 sudo 运行"
+        return 1
     fi
-    
-    # 检查 fzf
-    if [ ! -x "$bin_dir/fzf" ]; then
-        echo "正在下载 fzf..."
-        download_fzf "$bin_dir" "$arch" "$os"
-    fi
-    
-    # 添加到 PATH
-    export PATH="$bin_dir:$PATH"
-}
-
-# 下载 gum
-download_gum() {
-    local bin_dir="$1"
-    local arch="$2"
-    local os="$3"
-    
-    # gum 版本
-    local version="0.13.0"
-    local url=""
-    
-    case "${os}_${arch}" in
-        linux_amd64)
-            url="https://github.com/charmbracelet/gum/releases/download/v${version}/gum_${version}_Linux_x86_64.tar.gz"
-            ;;
-        linux_arm64)
-            url="https://github.com/charmbracelet/gum/releases/download/v${version}/gum_${version}_Linux_arm64.tar.gz"
-            ;;
-        darwin_amd64)
-            url="https://github.com/charmbracelet/gum/releases/download/v${version}/gum_${version}_Darwin_x86_64.tar.gz"
-            ;;
-        darwin_arm64)
-            url="https://github.com/charmbracelet/gum/releases/download/v${version}/gum_${version}_Darwin_arm64.tar.gz"
-            ;;
-        *)
-            echo "错误: 不支持的系统架构 ${os}_${arch}"
-            exit 1
-            ;;
-    esac
-    
-    # 下载并解压
-    local tmp_file=$(mktemp)
-    curl -sL "$url" -o "$tmp_file"
-    tar -xzf "$tmp_file" -C "$bin_dir" gum
-    rm -f "$tmp_file"
-    chmod +x "$bin_dir/gum"
-}
-
-# 下载 fzf
-download_fzf() {
-    local bin_dir="$1"
-    local arch="$2"
-    local os="$3"
-    
-    # fzf 版本
-    local version="0.46.1"
-    local url=""
-    
-    case "${os}_${arch}" in
-        linux_amd64)
-            url="https://github.com/junegunn/fzf/releases/download/${version}/fzf-${version}-linux_amd64.tar.gz"
-            ;;
-        linux_arm64)
-            url="https://github.com/junegunn/fzf/releases/download/${version}/fzf-${version}-linux_arm64.tar.gz"
-            ;;
-        darwin_amd64)
-            url="https://github.com/junegunn/fzf/releases/download/${version}/fzf-${version}-darwin_amd64.zip"
-            ;;
-        darwin_arm64)
-            url="https://github.com/junegunn/fzf/releases/download/${version}/fzf-${version}-darwin_arm64.zip"
-            ;;
-        *)
-            echo "错误: 不支持的系统架构 ${os}_${arch}"
-            exit 1
-            ;;
-    esac
-    
-    # 下载并解压
-    local tmp_file=$(mktemp)
-    curl -sL "$url" -o "$tmp_file"
-    
-    if [[ "$url" == *.zip ]]; then
-        unzip -q "$tmp_file" -d "$bin_dir"
-    else
-        tar -xzf "$tmp_file" -C "$bin_dir"
-    fi
-    
-    rm -f "$tmp_file"
-    chmod +x "$bin_dir/fzf"
+    return 0
 }
 
 # 获取本机 IP 地址
 get_local_ip() {
     local ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+    if [ -z "$ip" ]; then
+        ip=$(ip route get 1 2>/dev/null | awk '{print $7; exit}')
+    fi
     if [ -z "$ip" ]; then
         ip=$(ifconfig 2>/dev/null | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -1)
     fi
@@ -153,9 +95,125 @@ get_local_ip() {
 
 # 获取公网 IP 地址
 get_public_ip() {
-    local ip=$(curl -s --connect-timeout 3 ifconfig.me 2>/dev/null)
-    if [ -z "$ip" ]; then
-        ip=$(curl -s --connect-timeout 3 ip.sb 2>/dev/null)
+    local ip=""
+    local services=(
+        "ifconfig.me"
+        "ip.sb"
+        "ipinfo.io/ip"
+        "icanhazip.com"
+    )
+
+    for service in "${services[@]}"; do
+        ip=$(curl -s --connect-timeout 3 --max-time 5 "$service" 2>/dev/null)
+        if [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "$ip"
+            return 0
+        fi
+    done
+
+    echo "未知"
+}
+
+# 检查命令是否存在
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+# 检查端口是否被占用
+port_in_use() {
+    local port="$1"
+    if command_exists ss; then
+        ss -tuln | grep -q ":${port} "
+    elif command_exists netstat; then
+        netstat -tuln | grep -q ":${port} "
+    else
+        return 1
     fi
-    echo "${ip:-未知}"
+}
+
+# 验证 IP 地址格式
+is_valid_ip() {
+    local ip="$1"
+    if [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# 验证端口号
+is_valid_port() {
+    local port="$1"
+    if [[ "$port" =~ ^[0-9]+$ ]] && [ "$port" -ge 1 ] && [ "$port" -le 65535 ]; then
+        return 0
+    fi
+    return 1
+}
+
+# 获取系统内存（MB）
+get_total_mem_mb() {
+    local mem=$(free -m | awk '/^Mem:/{print $2}')
+    echo "${mem:-0}"
+}
+
+# 获取可用内存（MB）
+get_free_mem_mb() {
+    local mem=$(free -m | awk '/^Mem:/{print $7}')
+    echo "${mem:-0}"
+}
+
+# 获取磁盘使用率
+get_disk_usage() {
+    local path="${1:-/}"
+    df -h "$path" 2>/dev/null | awk 'NR==2{print $5}' | tr -d '%'
+}
+
+# 日志记录
+log_info() {
+    local msg="$1"
+    local log_file="${ROOT_DIR}/logs/hgtool.log"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $msg" >> "$log_file"
+}
+
+log_error() {
+    local msg="$1"
+    local log_file="${ROOT_DIR}/logs/hgtool.log"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] $msg" >> "$log_file"
+}
+
+log_warn() {
+    local msg="$1"
+    local log_file="${ROOT_DIR}/logs/hgtool.log"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [WARN] $msg" >> "$log_file"
+}
+
+# 备份文件
+backup_file() {
+    local file="$1"
+    local backup_dir="${ROOT_DIR}/backups"
+
+    if [ -f "$file" ]; then
+        mkdir -p "$backup_dir"
+        local filename=$(basename "$file")
+        local timestamp=$(date '+%Y%m%d_%H%M%S')
+        cp "$file" "${backup_dir}/${filename}.${timestamp}.bak"
+        log_info "已备份文件: $file -> ${backup_dir}/${filename}.${timestamp}.bak"
+        return 0
+    fi
+    return 1
+}
+
+# 安全执行命令
+safe_exec() {
+    local cmd="$1"
+    local desc="${2:-执行命令}"
+
+    log_info "执行: $cmd"
+
+    if eval "$cmd" 2>&1; then
+        log_info "$desc 成功"
+        return 0
+    else
+        log_error "$desc 失败: $cmd"
+        return 1
+    fi
 }
