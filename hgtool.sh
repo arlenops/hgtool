@@ -9,11 +9,6 @@
 #   - 美观：全程使用 gum/fzf 渲染 UI
 # ============================================================
 
-set -e
-
-# 版本信息
-VERSION="1.0.0"
-
 # 1. 定义工作目录
 ROOT_DIR=$(cd "$(dirname "$0")"; pwd)
 export ROOT_DIR
@@ -22,7 +17,7 @@ export ROOT_DIR
 source "$ROOT_DIR/lib/deps.sh"
 source "$ROOT_DIR/lib/utils.sh"
 
-# 3. 环境自检 - 检查并下载 gum/fzf
+# 3. 环境自检 - 检查并下载 gum
 check_and_install_dependencies
 
 # 4. 现在可以加载 UI 库了（依赖 gum）
@@ -50,8 +45,8 @@ generate_menu_items() {
             for plugin_file in "$category_dir"/*.sh; do
                 if [ -f "$plugin_file" ]; then
                     # 读取插件名称
-                    local plugin_name=$(grep -m1 "^PLUGIN_NAME=" "$plugin_file" 2>/dev/null | cut -d'"' -f2)
-                    local plugin_desc=$(grep -m1 "^PLUGIN_DESC=" "$plugin_file" 2>/dev/null | cut -d'"' -f2)
+                    local plugin_name=$(grep -m1 "^PLUGIN_NAME=" "$plugin_file" 2>/dev/null | cut -d'"' -f2 || echo "")
+                    local plugin_desc=$(grep -m1 "^PLUGIN_DESC=" "$plugin_file" 2>/dev/null | cut -d'"' -f2 || echo "")
 
                     if [ -n "$plugin_name" ]; then
                         echo "$plugin_name|$plugin_desc|$plugin_file"

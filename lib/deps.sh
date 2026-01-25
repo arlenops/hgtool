@@ -125,72 +125,6 @@ download_gum() {
     return 0
 }
 
-# 下载 fzf
-download_fzf() {
-    local bin_dir="$1"
-    local arch="$2"
-    local os="$3"
-    local url=""
-    local is_zip=false
-
-    # 构建下载 URL
-    case "${os}_${arch}" in
-        linux_amd64)
-            url="${GITHUB_MIRROR}/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz"
-            ;;
-        linux_arm64)
-            url="${GITHUB_MIRROR}/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_arm64.tar.gz"
-            ;;
-        darwin_amd64)
-            url="${GITHUB_MIRROR}/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-darwin_amd64.zip"
-            is_zip=true
-            ;;
-        darwin_arm64)
-            url="${GITHUB_MIRROR}/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-darwin_arm64.zip"
-            is_zip=true
-            ;;
-        *)
-            echo "错误: 不支持的系统架构 ${os}_${arch}"
-            return 1
-            ;;
-    esac
-
-    echo "  下载地址: $url"
-
-    # 创建临时目录
-    local tmp_dir=$(mktemp -d)
-    local tmp_file="${tmp_dir}/fzf.archive"
-
-    # 下载
-    if ! download_file "$url" "$tmp_file"; then
-        rm -rf "$tmp_dir"
-        return 1
-    fi
-
-    # 解压
-    if [ "$is_zip" = true ]; then
-        if command_exists unzip; then
-            unzip -q "$tmp_file" -d "$tmp_dir"
-        else
-            echo "错误: 需要 unzip 来解压 fzf"
-            rm -rf "$tmp_dir"
-            return 1
-        fi
-    else
-        tar -xzf "$tmp_file" -C "$tmp_dir" 2>/dev/null
-    fi
-
-    # 移动二进制
-    if [ -f "${tmp_dir}/fzf" ]; then
-        mv "${tmp_dir}/fzf" "${bin_dir}/fzf"
-    fi
-
-    chmod +x "${bin_dir}/fzf"
-    rm -rf "$tmp_dir"
-
-    return 0
-}
-
 # 主检查函数
 check_and_install_dependencies() {
     local bin_dir="${ROOT_DIR}/bin"
@@ -211,7 +145,7 @@ check_and_install_dependencies() {
         echo "│  首次运行，正在下载依赖组件...          │"
         echo "└─────────────────────────────────────────┘"
         echo ""
-        echo "[1/2] 正在下载 gum v${GUM_VERSION}..."
+        echo "[1/1] 正在下载 gum v${GUM_VERSION}..."
         if download_gum "$bin_dir" "$arch" "$os"; then
             echo "  ✓ gum 下载成功"
         else
@@ -219,27 +153,6 @@ check_and_install_dependencies() {
             echo ""
             echo "请手动下载 gum 并放置到 ${bin_dir}/gum"
             echo "下载地址: https://github.com/charmbracelet/gum/releases"
-            exit 1
-        fi
-    fi
-
-    # 检查 fzf
-    if [ ! -x "${bin_dir}/fzf" ]; then
-        if [ "$need_download" = false ]; then
-            echo ""
-            echo "┌─────────────────────────────────────────┐"
-            echo "│  正在下载缺失的依赖组件...              │"
-            echo "└─────────────────────────────────────────┘"
-            echo ""
-        fi
-        echo "[2/2] 正在下载 fzf v${FZF_VERSION}..."
-        if download_fzf "$bin_dir" "$arch" "$os"; then
-            echo "  ✓ fzf 下载成功"
-        else
-            echo "  ✗ fzf 下载失败"
-            echo ""
-            echo "请手动下载 fzf 并放置到 ${bin_dir}/fzf"
-            echo "下载地址: https://github.com/junegunn/fzf/releases"
             exit 1
         fi
     fi
@@ -253,7 +166,6 @@ check_and_install_dependencies() {
     # 导出路径
     export PATH="${bin_dir}:$PATH"
     export GUM_BIN="${bin_dir}/gum"
-    export FZF_BIN="${bin_dir}/fzf"
 }
 
 # 验证依赖是否可用
@@ -262,11 +174,6 @@ verify_dependencies() {
 
     if [ ! -x "${bin_dir}/gum" ]; then
         echo "错误: gum 不可用"
-        return 1
-    fi
-
-    if [ ! -x "${bin_dir}/fzf" ]; then
-        echo "错误: fzf 不可用"
         return 1
     fi
 
