@@ -57,11 +57,10 @@ generate_menu_items() {
     done
 }
 
-# 格式化菜单显示（表格化对齐，带数字编号）
-format_menu_item_numbered() {
-    local index="$1"
-    local name="$2"
-    local desc="$3"
+# 格式化菜单显示（表格化对齐，无编号）
+format_menu_item_no_number() {
+    local name="$1"
+    local desc="$2"
     local target_width=16  # 名称列目标显示宽度
 
     # 计算实际显示宽度（中文占2，英文占1）
@@ -74,11 +73,10 @@ format_menu_item_numbered() {
         spaces+=" "
     done
 
-    # 编号右对齐，占2位
-    printf " %2d. %s%s│ %s" "$index" "$name" "$spaces" "$desc"
+    # 移除编号，直接显示名称和描述，左侧适当缩进
+    printf "  %s%s│ %s" "$name" "$spaces" "$desc"
 }
 
-# 主菜单
 # 主菜单
 main_menu() {
     while true; do
@@ -99,13 +97,13 @@ main_menu() {
                 ((count++))
                 plugin_map[$count]="$file"
                 # 生成格式化字符串 (去掉开头的空格，因为 gum choose 会处理选择指针)
-                local display_text=$(format_menu_item_numbered "$count" "$name" "$desc" | sed 's/^ //')
+                local display_text=$(format_menu_item_no_number "$name" "$desc" | sed 's/^ //')
                 menu_display_items+=("$display_text")
             fi
         done <<< "$menu_data"
 
-        # 添加退出选项
-        local exit_opt=$(printf "%2d. %-14s │ %s" "0" "退出程序" "Exit")
+        # 添加退出选项 (与上方保持对齐)
+        local exit_opt=$(format_menu_item_no_number "退出程序" "Exit" | sed 's/^ //')
         menu_display_items+=("$exit_opt")
 
         # 使用 gum choose 显示菜单
@@ -129,11 +127,20 @@ main_menu() {
             fi
         fi
 
-        # 提取选择的编号 (第一个空格前的数字)
-        local selected_index=$(echo "$choice" | awk '{print $1}' | tr -d '.')
+        # 查找选择的索引
+        local selected_index=-1
+        for i in "${!menu_display_items[@]}"; do
+            if [[ "${menu_display_items[$i]}" == "$choice" ]]; then
+                # 数组索引从0开始，但我们的 plugin_map 是从1开始计数的 (因为 count 从1开始)
+                # 菜单项数组下标 0 对应 plugin_map 1
+                # 最后一个是退出选项
+                selected_index=$i
+                break
+            fi
+        done
 
-        # 处理退出
-        if [ "$selected_index" = "0" ]; then
+        # 处理退出 (检查是否包含 "退出程序")
+        if [[ "$choice" == *"退出程序"* ]]; then
             hg_banner
             "$GUM" style \
                 --foreground "$ACCENT_COLOR" \
@@ -150,18 +157,17 @@ main_menu() {
         fi
 
         # 执行插件
-        if [[ "$selected_index" =~ ^[0-9]+$ ]]; then
-            local plugin_file="${plugin_map[$selected_index]}"
-            if [ -f "$plugin_file" ]; then
+        # plugin_map 的key是从 1 到 count
+        # menu_display_items 的key是从 0 到 count-1 (对应插件) 和 count (退出)
+        # 所以 plugin_key = selected_index + 1
+        if [ "$selected_index" -ge 0 ]; then
+             local plugin_key=$((selected_index + 1))
+             local plugin_file="${plugin_map[$plugin_key]}"
+             
+             if [ -f "$plugin_file" ]; then
                 # 执行插件
                 source "$plugin_file"
-                
-                # 插件执行完后暂停一下（可选，视插件本身是否有暂停而定）
-                # hg_pause "按任意键返回主菜单..."
-            else
-                hg_error "未找到插件文件: $plugin_file"
-                sleep 2
-            fi
+             fi
         fi
     done
 }

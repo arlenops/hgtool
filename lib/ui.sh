@@ -134,7 +134,7 @@ hg_title() {
         --border "rounded" \
         --border-foreground "$PRIMARY_COLOR" \
         --padding "0 2" \
-        "▶ $title"
+        "$title"
     echo ""
 }
 
@@ -148,122 +148,37 @@ hg_confirm() {
     local is_danger="${2:-false}"
 
     local color="$PRIMARY_COLOR"
+    local select_color="$ACCENT_COLOR"
     if [ "$is_danger" = "true" ]; then
         color="$ERROR_COLOR"
+        select_color="$ERROR_COLOR"
     fi
 
-    "$GUM" confirm \
-        --prompt.foreground "$color" \
-        --selected.background "$color" \
-        "$msg"
-    return $?
+    # 使用 choose 替代 confirm，实现上下选择
+    echo ""
+    "$GUM" style --foreground "$color" --bold "$msg"
+    
+    local choice
+    choice=$("$GUM" choose \
+        --cursor="> " \
+        --cursor.foreground "$select_color" \
+        --selected.foreground "$select_color" \
+        "是" \
+        "否")
+        
+    if [ "$choice" == "是" ]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # 危险确认（红色警告）
 hg_confirm_danger() {
-    local msg="${1:-⚠️ 危险操作！确认继续？}"
-    "$GUM" confirm \
-        --prompt.foreground "$ERROR_COLOR" \
-        --selected.background "$ERROR_COLOR" \
-        --affirmative "是的，我确认" \
-        --negative "取消" \
-        "$msg"
+    local msg="${1:-危险操作！确认继续？}"
+    hg_confirm "$msg" "true"
     return $?
 }
-
-# 获取用户输入
-hg_input() {
-    local prompt="${1:-请输入}"
-    local placeholder="${2:-}"
-    local default="${3:-}"
-
-    "$GUM" input \
-        --placeholder "$placeholder" \
-        --prompt "$prompt: " \
-        --prompt.foreground "$PRIMARY_COLOR" \
-        --value "$default"
-}
-
-# 获取密码输入
-hg_password() {
-    local prompt="${1:-请输入密码}"
-
-    "$GUM" input \
-        --password \
-        --prompt "$prompt: " \
-        --prompt.foreground "$PRIMARY_COLOR"
-}
-
-# 多行文本输入
-hg_write() {
-    local placeholder="${1:-输入内容...}"
-
-    "$GUM" write \
-        --placeholder "$placeholder" \
-        --header.foreground "$PRIMARY_COLOR"
-}
-
-# 单选菜单
-hg_choose() {
-    local header="${1:-请选择}"
-    shift
-
-    "$GUM" choose \
-        --header "$header" \
-        --header.foreground "$PRIMARY_COLOR" \
-        --cursor.foreground "$PRIMARY_COLOR" \
-        --selected.foreground "$ACCENT_COLOR" \
-        "$@" || true
-}
-
-# 多选菜单
-hg_choose_multi() {
-    local header="${1:-请选择（空格选中，回车确认）}"
-    shift
-
-    "$GUM" choose \
-        --no-limit \
-        --header "$header" \
-        --header.foreground "$PRIMARY_COLOR" \
-        --cursor.foreground "$PRIMARY_COLOR" \
-        --selected.foreground "$ACCENT_COLOR" \
-        "$@"
-}
-
-
-
-# ============================================================
-# 进度和状态
-# ============================================================
-
-# 执行任务（带 Spinner）
-hg_spin() {
-    local msg="${1:-处理中...}"
-    shift
-
-    "$GUM" spin \
-        --spinner "dot" \
-        --spinner.foreground "$PRIMARY_COLOR" \
-        --title "$msg" \
-        --title.foreground "$PRIMARY_COLOR" \
-        -- "$@"
-}
-
-# 执行命令并显示进度
-hg_process() {
-    local msg="${1:-处理中...}"
-    local cmd="${2}"
-
-    "$GUM" spin \
-        --spinner "dot" \
-        --spinner.foreground "$PRIMARY_COLOR" \
-        --title "$msg" \
-        -- bash -c "$cmd"
-}
-
-# ============================================================
-# 消息提示
-# ============================================================
 
 # 成功提示
 hg_success() {
@@ -272,7 +187,7 @@ hg_success() {
     "$GUM" style \
         --foreground "$ACCENT_COLOR" \
         --bold \
-        "✓ $msg"
+        "[成功] $msg"
 }
 
 # 错误提示
@@ -285,7 +200,7 @@ hg_error() {
         --border "rounded" \
         --border-foreground "$ERROR_COLOR" \
         --padding "0 1" \
-        "✗ $msg"
+        "[失败] $msg"
 }
 
 # 警告提示
@@ -295,7 +210,7 @@ hg_warn() {
     "$GUM" style \
         --foreground "$WARNING_COLOR" \
         --bold \
-        "⚠ $msg"
+        "[注意] $msg"
 }
 
 # 信息提示
@@ -303,7 +218,7 @@ hg_info() {
     local msg="${1:-提示}"
     "$GUM" style \
         --foreground "$INFO_COLOR" \
-        "ℹ $msg"
+        "[信息] $msg"
 }
 
 # 格式化输出表格
