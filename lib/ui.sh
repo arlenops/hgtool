@@ -49,11 +49,9 @@ hg_banner() {
 ───────────── by HGIDC ─────────────'
 
     echo ""
-    "$GUM" style \
-        --foreground "$PRIMARY_COLOR" \
-        --bold \
-        --align "center" \
-        "$logo"
+    # 先渲染Logo为左对齐块（保持ASCII对齐），再整体居中
+    local logo_block=$("$GUM" style --foreground "$PRIMARY_COLOR" --bold --align left "$logo")
+    "$GUM" style --align center "$logo_block"
 
     # 显示系统信息栏
     hg_show_sysinfo
