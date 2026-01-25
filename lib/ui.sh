@@ -39,10 +39,10 @@ FZF="${ROOT_DIR}/bin/fzf"
 hg_banner() {
     clear
 
-    # 紧凑版 ASCII Art Logo（3行）HGTOOL---HGIDC
-    local logo='╦ ╦╔═╗╔╦╗╔═╗╔═╗╦    ───  ╦ ╦╔═╗╦╔╦╗╔═╗
-╠═╣║ ╦ ║ ║ ║║ ║║    ───  ╠═╣║ ╦║ ║║║  
-╩ ╩╚═╝ ╩ ╚═╝╚═╝╩═╝  ───  ╩ ╩╚═╝╩═╩╝╚═╝'
+    # 紧凑版 ASCII Art Logo（3行）HGTOOL - HGIDC
+    local logo='╦ ╦╔═╗╔╦╗╔═╗╔═╗╦    ╦ ╦╔═╗╦╔╦╗╔═╗
+╠═╣║ ╦ ║ ║ ║║ ║║  ──╠═╣║ ╦║ ║║║  
+╩ ╩╚═╝ ╩ ╚═╝╚═╝╩═╝  ╩ ╩╚═╝╩═╩╝╚═╝'
 
     echo ""
     "$GUM" style \
