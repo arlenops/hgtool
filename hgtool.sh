@@ -85,6 +85,7 @@ format_menu_item() {
 main_menu() {
     while true; do
         hg_banner
+        hg_footer "$VERSION"
 
         # 生成菜单
         local menu_data=$(generate_menu_items)
