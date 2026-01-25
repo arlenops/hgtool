@@ -55,25 +55,71 @@ hg_banner() {
     hg_show_sysinfo
 }
 
-# 显示系统信息栏（紧凑单行格式）
+# 显示系统信息栏（含资源进度条）
 hg_show_sysinfo() {
     local hostname=$(hostname 2>/dev/null || echo "N/A")
     local os_info=$(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 | cut -d' ' -f1-2 || echo "N/A")
     local local_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "N/A")
     local cpu_cores=$(nproc 2>/dev/null || echo "?")
-    local mem_total=$(free -h 2>/dev/null | awk '/^Mem:/{print $2}' || echo "?")
 
-    # 紧凑的单行格式
-    "$GUM" style \
-        --foreground "$DIM_COLOR" \
+    # 获取内存使用情况
+    local mem_info=$(free -m 2>/dev/null | awk '/^Mem:/{printf "%d %d", $3, $2}')
+    local mem_used=$(echo "$mem_info" | cut -d' ' -f1)
+    local mem_total=$(echo "$mem_info" | cut -d' ' -f2)
+    local mem_percent=$((mem_used * 100 / mem_total))
+
+    # 获取磁盘使用情况（根分区）
+    local disk_info=$(df -m / 2>/dev/null | awk 'NR==2{printf "%d %d", $3, $2}')
+    local disk_used=$(echo "$disk_info" | cut -d' ' -f1)
+    local disk_total=$(echo "$disk_info" | cut -d' ' -f2)
+    local disk_percent=$((disk_used * 100 / disk_total))
+
+    # 固定信息行
+    "$GUM" style --foreground "$DIM_COLOR" \
         "┌─────────────────────────────────────────────────────────────────┐"
-    "$GUM" style \
-        --foreground "$DIM_COLOR" \
-        "│ $hostname @ $os_info │ IP: $local_ip │ CPU: ${cpu_cores}c │ MEM: $mem_total │"
-    "$GUM" style \
-        --foreground "$DIM_COLOR" \
+    "$GUM" style --foreground "$DIM_COLOR" \
+        "│ $hostname @ $os_info │ IP: $local_ip │ CPU: ${cpu_cores}c"
+    "$GUM" style --foreground "$DIM_COLOR" \
+        "├─────────────────────────────────────────────────────────────────┤"
+
+    # 内存进度条
+    local mem_bar=$(draw_progress_bar $mem_percent 30)
+    local mem_color=$(get_usage_color $mem_percent)
+    printf "│ MEM: %s %3d%% [%dM/%dM]\n" "$("$GUM" style --foreground "$mem_color" "$mem_bar")" "$mem_percent" "$mem_used" "$mem_total"
+
+    # 磁盘进度条
+    local disk_bar=$(draw_progress_bar $disk_percent 30)
+    local disk_color=$(get_usage_color $disk_percent)
+    printf "│ DISK:%s %3d%% [%dM/%dM]\n" "$("$GUM" style --foreground "$disk_color" "$disk_bar")" "$disk_percent" "$disk_used" "$disk_total"
+
+    "$GUM" style --foreground "$DIM_COLOR" \
         "└─────────────────────────────────────────────────────────────────┘"
     echo ""
+}
+
+# 绘制进度条
+draw_progress_bar() {
+    local percent=$1
+    local width=$2
+    local filled=$((percent * width / 100))
+    local empty=$((width - filled))
+    
+    local bar=""
+    for ((i=0; i<filled; i++)); do bar+="█"; done
+    for ((i=0; i<empty; i++)); do bar+="░"; done
+    echo "$bar"
+}
+
+# 根据使用率返回颜色
+get_usage_color() {
+    local percent=$1
+    if [ "$percent" -lt 60 ]; then
+        echo "$ACCENT_COLOR"  # 绿色
+    elif [ "$percent" -lt 80 ]; then
+        echo "$WARNING_COLOR"  # 黄色
+    else
+        echo "$ERROR_COLOR"  # 红色
+    fi
 }
 
 # 显示小标题
