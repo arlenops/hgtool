@@ -79,45 +79,61 @@ format_menu_item_numbered() {
 }
 
 # 主菜单
+# 主菜单
 main_menu() {
     while true; do
         hg_banner
+        # echo "" (hg_banner结尾已经有空行了，不需要再加)
+        "$GUM" style --foreground "$PRIMARY_COLOR" --bold "  请选择要执行的操作:"
+        echo ""
 
         # 生成菜单数据
         local menu_data=$(generate_menu_items)
         local plugin_map=()
+        local menu_display_items=()
         local count=0
 
-        # 显示菜单头部
-        echo ""
-        "$GUM" style --foreground "$PRIMARY_COLOR" --bold "  请选择要执行的操作 [输入编号]:"
-        echo ""
-
-        # 遍历并显示菜单项
+        # 遍历并生成菜单项
         while IFS='|' read -r name desc file; do
             if [ -n "$name" ]; then
                 ((count++))
                 plugin_map[$count]="$file"
-                format_menu_item_numbered "$count" "$name" "$desc"
-                echo ""
+                # 生成格式化字符串 (去掉开头的空格，因为 gum choose 会处理选择指针)
+                local display_text=$(format_menu_item_numbered "$count" "$name" "$desc" | sed 's/^ //')
+                menu_display_items+=("$display_text")
             fi
         done <<< "$menu_data"
 
-        # 显示退出选项
-        echo ""
-        echo "  0. 退出程序"
-        echo ""
+        # 添加退出选项
+        local exit_opt=$(printf "%2d. %-14s │ %s" "0" "退出程序" "Exit")
+        menu_display_items+=("$exit_opt")
 
-        # 获取用户输入
+        # 使用 gum choose 显示菜单
+        # --height 限定高度
+        # --cursor.foreground 设定光标颜色
         local choice
-        # 获取用户输入
-        local choice
-        local prompt_char=$("$GUM" style --foreground "$ACCENT_COLOR" --bold ">")
-        printf "  %s " "$prompt_char"
-        read choice
+        choice=$("$GUM" choose \
+            --height=15 \
+            --cursor="> " \
+            --cursor.foreground "$ACCENT_COLOR" \
+            --item.foreground "$DIM_COLOR" \
+            --selected.foreground "$PRIMARY_COLOR" \
+            "${menu_display_items[@]}")
+
+        # 处理选择
+        if [ -z "$choice" ]; then
+            # Esc 或 ctrl-c 退出 (或者什么都没选)
+            # 在 gum choose 中，Esc 默认返回非零，这里 choice 可能为空
+            if [ $? -ne 0 ]; then
+                 continue # 或者退出? 通常 Esc 期望退出或取消。这里我们视为空选择，重新循环
+            fi
+        fi
+
+        # 提取选择的编号 (第一个空格前的数字)
+        local selected_index=$(echo "$choice" | awk '{print $1}' | tr -d '.')
 
         # 处理退出
-        if [ "$choice" = "0" ] || [ "$choice" = "q" ] || [ "$choice" = "quit" ]; then
+        if [ "$selected_index" = "0" ]; then
             hg_banner
             "$GUM" style \
                 --foreground "$ACCENT_COLOR" \
@@ -133,9 +149,9 @@ main_menu() {
             exit 0
         fi
 
-        # 处理选择
-        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$count" ]; then
-            local plugin_file="${plugin_map[$choice]}"
+        # 执行插件
+        if [[ "$selected_index" =~ ^[0-9]+$ ]]; then
+            local plugin_file="${plugin_map[$selected_index]}"
             if [ -f "$plugin_file" ]; then
                 # 执行插件
                 source "$plugin_file"
@@ -145,11 +161,6 @@ main_menu() {
             else
                 hg_error "未找到插件文件: $plugin_file"
                 sleep 2
-            fi
-        else
-            if [ -n "$choice" ]; then
-                hg_error "无效的选择: $choice"
-                sleep 1
             fi
         fi
     done
