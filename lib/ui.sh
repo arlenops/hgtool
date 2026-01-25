@@ -70,28 +70,30 @@ hg_banner() {
     hg_show_sysinfo
 }
 
-# 显示系统信息栏（卡片式布局）
+# 显示系统信息栏（表格化布局）
 hg_show_sysinfo() {
-    local hostname=$(hostname 2>/dev/null || echo "未知")
-    local os_info=$(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 || echo "未知")
-    local kernel=$(uname -r 2>/dev/null || echo "未知")
-    local local_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "未知")
+    local hostname=$(hostname 2>/dev/null || echo "N/A")
+    local os_info=$(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 || echo "N/A")
+    local kernel=$(uname -r 2>/dev/null || echo "N/A")
+    local local_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "N/A")
     local cpu_cores=$(nproc 2>/dev/null || echo "?")
     local mem_total=$(free -h 2>/dev/null | awk '/^Mem:/{print $2}' || echo "?")
 
-    # 使用emoji图标和分隔符显示系统信息
-    local info_line1="🖥️  $hostname  │  🐧 $os_info  │  📦 $kernel"
-    local info_line2="🌐 $local_ip  │  ⚡ ${cpu_cores}核  │  💾 $mem_total"
-
-    "$GUM" style \
-        --foreground "$DIM_COLOR" \
-        --border "rounded" \
-        --border-foreground "$DIM_COLOR" \
-        --padding "0 1" \
-        --margin "0 1" \
-        --align "center" \
-        "$info_line1
-$info_line2"
+    # 使用表格字符绘制系统信息
+    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
+'┌──────────┬────────────────────────────────────────────────┐')"
+    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
+"│ HOST     │ $hostname")"
+    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
+"│ SYSTEM   │ $os_info")"
+    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
+"│ KERNEL   │ $kernel")"
+    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
+"│ IP       │ $local_ip")"
+    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
+"│ RESOURCE │ CPU: ${cpu_cores} cores  MEM: $mem_total")"
+    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
+'└──────────┴────────────────────────────────────────────────┘')"
 
     echo ""
 }
