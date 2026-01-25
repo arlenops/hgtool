@@ -35,66 +35,44 @@ FZF="${ROOT_DIR}/bin/fzf"
 # Banner 和标题
 # ============================================================
 
-# 显示标题 Banner（渐变色效果）
+# 显示标题 Banner（紧凑版）
 hg_banner() {
     clear
 
-    # ASCII Art Logo - 每行单独渲染实现渐变
-    local lines=(
-        '██╗  ██╗ ██████╗ ████████╗ ██████╗  ██████╗ ██╗    '
-        '██║  ██║██╔════╝ ╚══██╔══╝██╔═══██╗██╔═══██╗██║    '
-        '███████║██║  ███╗   ██║   ██║   ██║██║   ██║██║    '
-        '██╔══██║██║   ██║   ██║   ██║   ██║██║   ██║██║    '
-        '██║  ██║╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝███████╗'
-        '╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝'
-    )
+    # 紧凑版 ASCII Art Logo（3行）
+    local logo='╦ ╦╔═╗╔╦╗╔═╗╔═╗╦  
+╠═╣║ ╦ ║ ║ ║║ ║║  
+╩ ╩╚═╝ ╩ ╚═╝╚═╝╩═╝'
 
     echo ""
-    # 渲染每一行（使用渐变色）
-    local styled_lines=""
-    for i in "${!lines[@]}"; do
-        local color="${GRADIENT_COLORS[$i]}"
-        styled_lines+=$("$GUM" style --foreground "$color" "${lines[$i]}")
-        styled_lines+=$'\n'
-    done
-
-    # 包装在圆角边框中
-    echo "$styled_lines" | "$GUM" style \
-        --border "rounded" \
-        --border-foreground "$DIM_COLOR" \
-        --padding "1 2" \
-        --margin "0 1" \
-        --align "center"
+    "$GUM" style \
+        --foreground "$PRIMARY_COLOR" \
+        --bold \
+        --align "center" \
+        "$logo"
 
     # 显示系统信息栏
     hg_show_sysinfo
 }
 
-# 显示系统信息栏（表格化布局）
+# 显示系统信息栏（紧凑单行格式）
 hg_show_sysinfo() {
     local hostname=$(hostname 2>/dev/null || echo "N/A")
-    local os_info=$(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 || echo "N/A")
-    local kernel=$(uname -r 2>/dev/null || echo "N/A")
+    local os_info=$(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 | cut -d' ' -f1-2 || echo "N/A")
     local local_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "N/A")
     local cpu_cores=$(nproc 2>/dev/null || echo "?")
     local mem_total=$(free -h 2>/dev/null | awk '/^Mem:/{print $2}' || echo "?")
 
-    # 使用表格字符绘制系统信息
-    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
-'┌──────────┬────────────────────────────────────────────────┐')"
-    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
-"│ HOST     │ $hostname")"
-    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
-"│ SYSTEM   │ $os_info")"
-    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
-"│ KERNEL   │ $kernel")"
-    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
-"│ IP       │ $local_ip")"
-    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
-"│ RESOURCE │ CPU: ${cpu_cores} cores  MEM: $mem_total")"
-    printf "%s\n" "$("$GUM" style --foreground "$DIM_COLOR" \
-'└──────────┴────────────────────────────────────────────────┘')"
-
+    # 紧凑的单行格式
+    "$GUM" style \
+        --foreground "$DIM_COLOR" \
+        "┌─────────────────────────────────────────────────────────────────┐"
+    "$GUM" style \
+        --foreground "$DIM_COLOR" \
+        "│ $hostname @ $os_info │ IP: $local_ip │ CPU: ${cpu_cores}c │ MEM: $mem_total │"
+    "$GUM" style \
+        --foreground "$DIM_COLOR" \
+        "└─────────────────────────────────────────────────────────────────┘"
     echo ""
 }
 
@@ -211,13 +189,13 @@ hg_choose_multi() {
 # fzf 菜单包装器
 fzf_menu_wrapper() {
     "$FZF" \
-        --height=60% \
+        --height=40% \
         --layout=reverse \
         --border=rounded \
-        --prompt="🔍 搜索: " \
-        --pointer="▶" \
-        --marker="✓" \
-        --header="↑↓选择 / 输入搜索 / ESC退出" \
+        --prompt="> " \
+        --pointer=">" \
+        --marker="*" \
+        --header="[UP/DOWN] Select  [ENTER] Confirm  [ESC] Exit" \
         --color="fg:#f8f8f2,bg:#282a36,hl:#bd93f9" \
         --color="fg+:#f8f8f2,bg+:#44475a,hl+:#bd93f9" \
         --color="info:#ffb86c,prompt:#50fa7b,pointer:#ff79c6" \
