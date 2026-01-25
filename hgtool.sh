@@ -62,10 +62,11 @@ generate_menu_items() {
     done
 }
 
-# 格式化菜单显示（表格化对齐，处理中英文混合宽度）
-format_menu_item() {
-    local name="$1"
-    local desc="$2"
+# 格式化菜单显示（表格化对齐，带数字编号）
+format_menu_item_numbered() {
+    local index="$1"
+    local name="$2"
+    local desc="$3"
     local target_width=16  # 名称列目标显示宽度
 
     # 计算实际显示宽度（中文占2，英文占1）
@@ -78,7 +79,8 @@ format_menu_item() {
         spaces+=" "
     done
 
-    printf "  %s%s│ %s" "$name" "$spaces" "$desc"
+    # 编号右对齐，占2位
+    printf " %2d. %s%s│ %s" "$index" "$name" "$spaces" "$desc"
 }
 
 # 主菜单
@@ -86,27 +88,38 @@ main_menu() {
     while true; do
         hg_banner
 
-        # 生成菜单
+        # 生成菜单数据
         local menu_data=$(generate_menu_items)
-        local menu_items=()
         local plugin_map=()
+        local count=0
 
+        # 显示菜单头部
+        echo ""
+        "$GUM" style --foreground "$PRIMARY_COLOR" --bold "  请选择要执行的操作 [输入编号]:"
+        echo ""
+
+        # 遍历并显示菜单项
         while IFS='|' read -r name desc file; do
             if [ -n "$name" ]; then
-                local formatted=$(format_menu_item "$name" "$desc")
-                menu_items+=("$formatted")
-                plugin_map+=("$file")
+                ((count++))
+                plugin_map[$count]="$file"
+                format_menu_item_numbered "$count" "$name" "$desc"
+                echo ""
             fi
         done <<< "$menu_data"
 
-        # 添加退出选项
-        menu_items+=("退出程序")
+        # 显示退出选项
+        echo ""
+        echo "  0. 退出程序"
+        echo ""
 
-        # 使用 fzf 显示菜单
-        local selected=$(printf '%s\n' "${menu_items[@]}" | fzf_menu_wrapper)
+        # 获取用户输入
+        local choice
+        "$GUM" style --foreground "$ACCENT_COLOR" --bold -n "  > "
+        read choice
 
-        # 处理选择
-        if [ -z "$selected" ] || [ "$selected" = "退出程序" ]; then
+        # 处理退出
+        if [ "$choice" = "0" ] || [ "$choice" = "q" ] || [ "$choice" = "quit" ]; then
             hg_banner
             "$GUM" style \
                 --foreground "$ACCENT_COLOR" \
@@ -117,26 +130,30 @@ main_menu() {
                 --margin "1" \
                 --align "center" \
                 "👋 感谢使用 hgtool！
-
+                
 再见！"
             exit 0
         fi
 
-        # 查找对应的插件文件
-        local idx=0
-        for item in "${menu_items[@]}"; do
-            if [ "$item" = "$selected" ]; then
-                if [ $idx -lt ${#plugin_map[@]} ]; then
-                    local plugin_file="${plugin_map[$idx]}"
-                    if [ -f "$plugin_file" ]; then
-                        # 执行插件
-                        source "$plugin_file"
-                    fi
-                fi
-                break
+        # 处理选择
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$count" ]; then
+            local plugin_file="${plugin_map[$choice]}"
+            if [ -f "$plugin_file" ]; then
+                # 执行插件
+                source "$plugin_file"
+                
+                # 插件执行完后暂停一下（可选，视插件本身是否有暂停而定）
+                # hg_pause "按任意键返回主菜单..."
+            else
+                hg_error "未找到插件文件: $plugin_file"
+                sleep 2
             fi
-            ((idx++))
-        done
+        else
+            if [ -n "$choice" ]; then
+                hg_error "无效的选择: $choice"
+                sleep 1
+            fi
+        fi
     done
 }
 
