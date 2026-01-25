@@ -110,7 +110,10 @@ main_menu() {
 
         # 获取用户输入
         local choice
-        "$GUM" style --foreground "$ACCENT_COLOR" --bold -n "  > "
+        # 获取用户输入
+        local choice
+        local prompt_char=$("$GUM" style --foreground "$ACCENT_COLOR" --bold ">")
+        printf "  %s " "$prompt_char"
         read choice
 
         # 处理退出
