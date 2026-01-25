@@ -62,13 +62,23 @@ generate_menu_items() {
     done
 }
 
-# 格式化菜单显示（表格化对齐）
+# 格式化菜单显示（表格化对齐，处理中英文混合宽度）
 format_menu_item() {
     local name="$1"
     local desc="$2"
+    local target_width=16  # 名称列目标显示宽度
 
-    # 固定列宽的表格化格式：名称(20宽) │ 描述
-    printf "  %-14s │ %-s" "$name" "$desc"
+    # 计算实际显示宽度（中文占2，英文占1）
+    local display_width=$(echo -n "$name" | wc -L)
+    local padding=$((target_width - display_width))
+    
+    # 生成填充空格
+    local spaces=""
+    for ((i=0; i<padding; i++)); do
+        spaces+=" "
+    done
+
+    printf "  %s%s│ %s" "$name" "$spaces" "$desc"
 }
 
 # 主菜单
