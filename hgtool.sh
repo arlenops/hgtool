@@ -62,13 +62,13 @@ generate_menu_items() {
     done
 }
 
-# 格式化菜单显示
+# 格式化菜单显示（表格化对齐）
 format_menu_item() {
     local name="$1"
     local desc="$2"
 
-    # 简洁的终端风格格式
-    printf "%-16s  %s" "$name" "$desc"
+    # 固定列宽的表格化格式：名称(20宽) │ 描述
+    printf "  %-14s │ %-s" "$name" "$desc"
 }
 
 # 主菜单
