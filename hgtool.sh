@@ -67,25 +67,14 @@ format_menu_item() {
     local name="$1"
     local desc="$2"
 
-    # 根据插件名添加图标
-    local icon="📦"
-    case "$name" in
-        *系统*) icon="🖥️" ;;
-        *存储*|*磁盘*) icon="💾" ;;
-        *网络*|*安全*) icon="🔐" ;;
-        *Docker*) icon="🐳" ;;
-        *Nginx*|*Web*) icon="🌐" ;;
-        *Caddy*) icon="⚡" ;;
-    esac
-
-    printf "%s %-12s - %s" "$icon" "$name" "$desc"
+    # 简洁的终端风格格式
+    printf "%-16s  %s" "$name" "$desc"
 }
 
 # 主菜单
 main_menu() {
     while true; do
         hg_banner
-        hg_footer "$VERSION"
 
         # 生成菜单
         local menu_data=$(generate_menu_items)
@@ -101,13 +90,13 @@ main_menu() {
         done <<< "$menu_data"
 
         # 添加退出选项
-        menu_items+=("🚪 退出程序")
+        menu_items+=("退出程序")
 
         # 使用 fzf 显示菜单
         local selected=$(printf '%s\n' "${menu_items[@]}" | fzf_menu_wrapper)
 
         # 处理选择
-        if [ -z "$selected" ] || [ "$selected" = "🚪 退出程序" ]; then
+        if [ -z "$selected" ] || [ "$selected" = "退出程序" ]; then
             hg_banner
             "$GUM" style \
                 --foreground "$ACCENT_COLOR" \
