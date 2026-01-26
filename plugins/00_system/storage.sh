@@ -12,34 +12,26 @@ plugin_main() {
     while true; do
         print_title "存储管理"
 
-        echo -e " ${BOLD}请选择操作：${PLAIN}"
-        echo ""
-        echo -e "   ${CYAN}❖${PLAIN}  挂载新磁盘              格式化并挂载新磁盘          ${BOLD}1)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  分区扩容                扩展现有分区                ${BOLD}2)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  磁盘信息                查看磁盘状态                ${BOLD}3)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  返回主菜单              Back                        ${BOLD}0)${PLAIN}"
-        echo ""
-        echo -ne " ${BOLD}└─ 请输入序号 [ 0-3 ]：${PLAIN}"
-        
+        # 使用交互式菜单
         local choice
-        read -r choice
+        choice=$(interactive_menu "请选择操作" \
+            "挂载新磁盘|格式化并挂载新磁盘" \
+            "分区扩容|扩展现有分区" \
+            "磁盘信息|查看磁盘状态" \
+            "返回主菜单|Back")
 
-        case "$choice" in
-            1)
+        case "${choice%%|*}" in
+            "挂载新磁盘")
                 mount_new_disk
                 ;;
-            2)
+            "分区扩容")
                 resize_partition
                 ;;
-            3)
+            "磁盘信息")
                 show_disk_info
                 ;;
-            0|"")
+            "返回主菜单"|"")
                 return 0
-                ;;
-            *)
-                print_warn "无效选项，请重新选择"
-                sleep 1
                 ;;
         esac
     done
@@ -60,36 +52,27 @@ mount_new_disk() {
     echo ""
 
     # 获取未挂载的磁盘
-    local disks=$(lsblk -dpno NAME,SIZE,TYPE | grep "disk" | awk '{print $1" ("$2")"}')
+    local -a disk_items=()
+    while IFS= read -r line; do
+        disk_items+=("$line")
+    done < <(lsblk -dpno NAME,SIZE,TYPE | grep "disk" | awk '{print $1" ("$2")"}')
 
-    if [ -z "$disks" ]; then
+    if [ ${#disk_items[@]} -eq 0 ]; then
         print_error "未找到可用磁盘"
         pause
         return 1
     fi
 
+    disk_items+=("返回|Back")
+
     # 选择磁盘
-    print_subtitle "可用磁盘"
-    local -a disk_list=()
-    local i=1
-    while IFS= read -r line; do
-        echo -e "   ${CYAN}❖${PLAIN}  $line  ${BOLD}${i})${PLAIN}"
-        disk_list+=("$line")
-        ((i++))
-    done <<< "$disks"
+    local selected_disk
+    selected_disk=$(interactive_menu "选择要操作的磁盘" "${disk_items[@]}")
     
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择磁盘 [ 1-$((i-1)) ]：${PLAIN}"
-    local disk_choice
-    read -r disk_choice
-    
-    if [[ -z "$disk_choice" ]] || ! [[ "$disk_choice" =~ ^[0-9]+$ ]] || [ "$disk_choice" -lt 1 ] || [ "$disk_choice" -gt $((i-1)) ]; then
-        print_warn "已取消"
-        pause
+    if [[ -z "$selected_disk" ]] || [[ "$selected_disk" == "返回|Back" ]]; then
         return 0
     fi
-    
-    local selected_disk="${disk_list[$((disk_choice-1))]}"
+
     local disk_path=$(echo "$selected_disk" | awk '{print $1}')
 
     # 危险确认
@@ -102,20 +85,14 @@ mount_new_disk() {
     fi
 
     # 选择文件系统
-    print_subtitle "选择文件系统"
-    echo -e "   ${CYAN}❖${PLAIN}  ext4 (推荐)                               ${BOLD}1)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  xfs                                       ${BOLD}2)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  btrfs                                     ${BOLD}3)${PLAIN}"
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择 [ 1-3 ]：${PLAIN}"
     local fs_choice
-    read -r fs_choice
+    fs_choice=$(interactive_menu "选择文件系统" \
+        "ext4|推荐，兼容性好" \
+        "xfs|高性能" \
+        "btrfs|现代文件系统")
     
-    local fs_type="ext4"
-    case "$fs_choice" in
-        2) fs_type="xfs" ;;
-        3) fs_type="btrfs" ;;
-    esac
+    local fs_type="${fs_choice%%|*}"
+    [ -z "$fs_type" ] && fs_type="ext4"
 
     # 输入挂载点
     local mount_point
@@ -175,38 +152,30 @@ resize_partition() {
     lsblk -o NAME,SIZE,TYPE,MOUNTPOINT | column -t
     echo ""
 
-    # 选择要扩容的分区
-    local partitions=$(lsblk -pno NAME,SIZE,MOUNTPOINT | grep -E "part|lvm" | awk '{print $1" "$2" "$3}')
+    # 获取可扩容的分区
+    local -a part_items=()
+    while IFS= read -r line; do
+        part_items+=("$line")
+    done < <(lsblk -pno NAME,SIZE,MOUNTPOINT | grep -E "part|lvm" | awk '{print $1" "$2" "$3}')
 
-    if [ -z "$partitions" ]; then
+    if [ ${#part_items[@]} -eq 0 ]; then
         print_error "未找到可扩容的分区"
         pause
         return 1
     fi
 
-    print_subtitle "可扩容分区"
-    local -a part_list=()
-    local i=1
-    while IFS= read -r line; do
-        echo -e "   ${CYAN}❖${PLAIN}  $line  ${BOLD}${i})${PLAIN}"
-        part_list+=("$line")
-        ((i++))
-    done <<< "$partitions"
+    part_items+=("返回|Back")
+
+    # 选择分区
+    local selected_part
+    selected_part=$(interactive_menu "选择要扩容的分区" "${part_items[@]}")
     
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择分区 [ 1-$((i-1)) ]：${PLAIN}"
-    local part_choice
-    read -r part_choice
-    
-    if [[ -z "$part_choice" ]] || ! [[ "$part_choice" =~ ^[0-9]+$ ]] || [ "$part_choice" -lt 1 ] || [ "$part_choice" -gt $((i-1)) ]; then
-        print_warn "已取消"
-        pause
+    if [[ -z "$selected_part" ]] || [[ "$selected_part" == "返回|Back" ]]; then
         return 0
     fi
 
-    local selected=$(echo "${part_list[$((part_choice-1))]}")
-    local partition=$(echo "$selected" | awk '{print $1}')
-    local mount_point=$(echo "$selected" | awk '{print $3}')
+    local partition=$(echo "$selected_part" | awk '{print $1}')
+    local mount_point=$(echo "$selected_part" | awk '{print $3}')
 
     # 获取磁盘设备
     local disk=$(echo "$partition" | sed 's/[0-9]*$//' | sed 's/p$//')

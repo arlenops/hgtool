@@ -137,66 +137,103 @@ print_banner() {
 # ============================================================
 # 菜单函数
 # ============================================================
+# ============================================================
+# 交互式选择菜单（上下键移动选择）
+# ============================================================
 
-# 打印菜单项
-# 用法: print_menu "菜单项1" "菜单项2" ...
-print_menu() {
-    local -a items=("$@")
-    local width=65
-    local name_width=20
-    local desc_width=35
-    
-    for i in "${!items[@]}"; do
-        local item="${items[$i]}"
-        local num=$((i + 1))
-        
-        # 如果包含 | 分隔符，分离名称和描述
-        if [[ "$item" == *"|"* ]]; then
-            local name="${item%%|*}"
-            local desc="${item#*|}"
-        else
-            local name="$item"
-            local desc=""
-        fi
-        
-        # 格式化输出（对齐）
-        printf "   ${CYAN}❖${PLAIN}  %-${name_width}s ${DIM}%-${desc_width}s${PLAIN} ${BOLD}%d)${PLAIN}\n" "$name" "$desc" "$num"
-    done
-}
-
-# 选择菜单
-# 用法: result=$(select_menu "提示文字" "选项1" "选项2" ...)
-# 返回: 选中的序号（从1开始），0表示取消
-select_menu() {
+# 交互式选择菜单
+# 用法: result=$(interactive_menu "提示文字" "选项1" "选项2" ...)
+# 返回: 选中的选项文本，空表示取消
+interactive_menu() {
     local prompt="$1"
     shift
     local -a items=("$@")
     local count=${#items[@]}
+    local selected=0
+    local key=""
     
-    echo ""
-    echo -e " ${BOLD}${prompt}${PLAIN}"
-    echo ""
-    print_menu "${items[@]}"
-    echo ""
+    # 隐藏光标
+    tput civis 2>/dev/null
     
-    local choice
+    # 保存当前位置
+    local start_row
+    start_row=$(tput lines 2>/dev/null || echo 24)
+    
     while true; do
-        echo -ne " ${BOLD}└─ 请输入序号 [ 1-${count} ]：${PLAIN}"
-        read -r choice
+        # 清除之前的菜单显示
+        echo -ne "\033[2K"  # 清除当前行
         
-        # 空输入视为取消
-        if [[ -z "$choice" ]]; then
-            echo 0
-            return
-        fi
+        # 显示提示
+        echo ""
+        echo -e " ${BOLD}${prompt}${PLAIN}"
+        echo -e " ${DIM}(↑/↓ 移动, Enter 确认, q 取消)${PLAIN}"
+        echo ""
         
-        # 验证输入
-        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$count" ]; then
-            echo "$choice"
-            return
-        else
-            print_warn "请输入有效的序号 (1-${count})"
-        fi
+        # 显示菜单项
+        for i in "${!items[@]}"; do
+            local item="${items[$i]}"
+            
+            # 分离名称和描述
+            if [[ "$item" == *"|"* ]]; then
+                local name="${item%%|*}"
+                local desc="${item#*|}"
+            else
+                local name="$item"
+                local desc=""
+            fi
+            
+            if [ $i -eq $selected ]; then
+                # 选中项 - 高亮显示
+                echo -e "   ${GREEN}▶${PLAIN} ${GREEN}${BOLD}${name}${PLAIN}  ${DIM}${desc}${PLAIN}"
+            else
+                # 普通项
+                echo -e "     ${DIM}${name}${PLAIN}  ${DIM}${desc}${PLAIN}"
+            fi
+        done
+        
+        echo ""
+        
+        # 读取按键
+        IFS= read -rsn1 key
+        
+        case "$key" in
+            $'\x1b')  # ESC 序列开始（方向键）
+                read -rsn2 -t 0.1 key
+                case "$key" in
+                    '[A')  # 上键
+                        ((selected--))
+                        [ $selected -lt 0 ] && selected=$((count - 1))
+                        ;;
+                    '[B')  # 下键
+                        ((selected++))
+                        [ $selected -ge $count ] && selected=0
+                        ;;
+                esac
+                ;;
+            'k'|'K')  # vim 风格上移
+                ((selected--))
+                [ $selected -lt 0 ] && selected=$((count - 1))
+                ;;
+            'j'|'J')  # vim 风格下移
+                ((selected++))
+                [ $selected -ge $count ] && selected=0
+                ;;
+            '')  # Enter 键
+                # 显示光标
+                tput cnorm 2>/dev/null
+                # 返回选中项
+                echo "${items[$selected]}"
+                return 0
+                ;;
+            'q'|'Q')  # q 取消
+                tput cnorm 2>/dev/null
+                echo ""
+                return 1
+                ;;
+        esac
+        
+        # 移动光标回到菜单开始位置重新绘制
+        echo -ne "\033[$((count + 5))A"
     done
 }
 
@@ -206,16 +243,9 @@ select_menu() {
 menu_select() {
     local title="$1"
     shift
-    local -a items=("$@")
-    
-    local idx
-    idx=$(select_menu "$title" "${items[@]}")
-    
-    if [[ "$idx" == "0" ]] || [[ -z "$idx" ]]; then
-        echo ""
-    else
-        echo "${items[$((idx-1))]}"
-    fi
+    local result
+    result=$(interactive_menu "$title" "$@")
+    echo "$result"
 }
 
 # ============================================================

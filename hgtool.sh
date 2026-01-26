@@ -82,59 +82,37 @@ main_menu() {
         done
         menu_items+=("退出程序|Exit")
         
-        # 显示菜单
-        echo -e " ${BOLD}请选择要执行的操作：${PLAIN}"
-        echo ""
-        
-        for i in "${!menu_items[@]}"; do
-            local item="${menu_items[$i]}"
-            local name="${item%%|*}"
-            local desc="${item#*|}"
-            local num=$((i + 1))
-            
-            # 最后一项是退出，编号为 0
-            if [ $i -eq $count ]; then
-                num=0
-            fi
-            
-            printf "   ${CYAN}❖${PLAIN}  %-16s ${DIM}%-30s${PLAIN} ${BOLD}%d)${PLAIN}\n" "$name" "$desc" "$num"
-        done
-        
-        echo ""
-        echo -ne " ${BOLD}└─ 请输入序号 [ 0-${count} ]：${PLAIN}"
-        
+        # 使用交互式菜单
         local choice
-        read -r choice
+        choice=$(interactive_menu "请选择要执行的操作" "${menu_items[@]}")
+        
+        # 如果取消返回空，刷新菜单
+        if [[ -z "$choice" ]]; then
+            continue
+        fi
+        
+        # 提取选择的名称
+        local selected_name="${choice%%|*}"
         
         # 处理选择
-        case "$choice" in
-            0)
-                # 退出
-                clear
-                echo ""
-                echo -e " ${GREEN}${BOLD}👋 感谢使用 hgtool！再见！${PLAIN}"
-                echo ""
-                exit 0
-                ;;
-            [1-9]|[1-9][0-9])
-                if [ "$choice" -le "$count" ]; then
-                    local plugin_file="${PLUGIN_FILES[$((choice-1))]}"
+        if [[ "$selected_name" == "退出程序" ]]; then
+            clear
+            echo ""
+            echo -e " ${GREEN}${BOLD}👋 感谢使用 hgtool！再见！${PLAIN}"
+            echo ""
+            exit 0
+        else
+            # 查找对应的插件文件
+            for i in "${!PLUGIN_NAMES[@]}"; do
+                if [[ "${PLUGIN_NAMES[$i]}" == "$selected_name" ]]; then
+                    local plugin_file="${PLUGIN_FILES[$i]}"
                     if [ -f "$plugin_file" ]; then
                         source "$plugin_file"
                     fi
-                else
-                    print_warn "无效的选项，请重新选择"
-                    sleep 1
+                    break
                 fi
-                ;;
-            "")
-                # 空输入，刷新
-                ;;
-            *)
-                print_warn "无效的选项，请重新选择"
-                sleep 1
-                ;;
-        esac
+            done
+        fi
     done
 }
 

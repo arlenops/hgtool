@@ -12,38 +12,29 @@ plugin_main() {
     while true; do
         print_title "系统管理"
 
-        echo -e " ${BOLD}请选择操作：${PLAIN}"
-        echo ""
-        echo -e "   ${CYAN}❖${PLAIN}  系统更新                更新系统软件包              ${BOLD}1)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  时区设置                设置系统时区                ${BOLD}2)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  Swap 管理               创建/删除 Swap              ${BOLD}3)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  系统信息                查看系统详情                ${BOLD}4)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  返回主菜单              Back                        ${BOLD}0)${PLAIN}"
-        echo ""
-        echo -ne " ${BOLD}└─ 请输入序号 [ 0-4 ]：${PLAIN}"
-        
         local choice
-        read -r choice
+        choice=$(interactive_menu "请选择操作" \
+            "系统更新|更新系统软件包" \
+            "时区设置|设置系统时区" \
+            "Swap 管理|创建/删除 Swap" \
+            "系统信息|查看系统详情" \
+            "返回主菜单|Back")
 
-        case "$choice" in
-            1)
+        case "${choice%%|*}" in
+            "系统更新")
                 system_update
                 ;;
-            2)
+            "时区设置")
                 timezone_setup
                 ;;
-            3)
+            "Swap 管理")
                 swap_manager
                 ;;
-            4)
+            "系统信息")
                 show_system_info
                 ;;
-            0|"")
+            "返回主菜单"|"")
                 return 0
-                ;;
-            *)
-                print_warn "无效选项，请重新选择"
-                sleep 1
                 ;;
         esac
     done
@@ -99,54 +90,25 @@ timezone_setup() {
 
     local current_tz=$(timedatectl show --property=Timezone --value 2>/dev/null || cat /etc/timezone 2>/dev/null || echo "未知")
     print_info "当前时区: $current_tz"
-    echo ""
 
-    # 常用时区列表
-    local -a tz_list=(
-        "Asia/Shanghai"
-        "Asia/Hong_Kong"
-        "Asia/Taipei"
-        "Asia/Tokyo"
-        "Asia/Singapore"
-        "America/New_York"
-        "America/Los_Angeles"
-        "Europe/London"
-        "UTC"
-    )
-    local -a tz_names=(
-        "中国-上海"
-        "中国-香港"
-        "中国-台北"
-        "日本-东京"
-        "新加坡"
-        "美国-纽约"
-        "美国-洛杉矶"
-        "英国-伦敦"
-        "协调世界时"
-    )
-
-    print_subtitle "选择时区"
-    for i in "${!tz_list[@]}"; do
-        printf "   ${CYAN}❖${PLAIN}  %-20s %-20s ${BOLD}%d)${PLAIN}\n" "${tz_list[$i]}" "(${tz_names[$i]})" "$((i+1))"
-    done
-    echo -e "   ${CYAN}❖${PLAIN}  返回                                         ${BOLD}0)${PLAIN}"
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择时区 [ 0-${#tz_list[@]} ]：${PLAIN}"
-    
     local tz_choice
-    read -r tz_choice
-    
-    if [[ "$tz_choice" == "0" ]] || [[ -z "$tz_choice" ]]; then
-        return 0
-    fi
-    
-    if ! [[ "$tz_choice" =~ ^[0-9]+$ ]] || [ "$tz_choice" -lt 1 ] || [ "$tz_choice" -gt ${#tz_list[@]} ]; then
-        print_warn "无效选项"
-        pause
+    tz_choice=$(interactive_menu "选择时区" \
+        "Asia/Shanghai|中国-上海" \
+        "Asia/Hong_Kong|中国-香港" \
+        "Asia/Taipei|中国-台北" \
+        "Asia/Tokyo|日本-东京" \
+        "Asia/Singapore|新加坡" \
+        "America/New_York|美国-纽约" \
+        "America/Los_Angeles|美国-洛杉矶" \
+        "Europe/London|英国-伦敦" \
+        "UTC|协调世界时" \
+        "返回|Back")
+
+    if [[ -z "$tz_choice" ]] || [[ "${tz_choice%%|*}" == "返回" ]]; then
         return 0
     fi
 
-    local timezone="${tz_list[$((tz_choice-1))]}"
+    local timezone="${tz_choice%%|*}"
 
     if command_exists timedatectl; then
         spinner "设置时区..." timedatectl set-timezone "$timezone"
@@ -175,31 +137,25 @@ swap_manager() {
     local swap_total=$(free -h | awk '/^Swap:/{print $2}')
     local swap_used=$(free -h | awk '/^Swap:/{print $3}')
     print_info "当前 Swap: 总计 $swap_total / 已用 $swap_used"
-    echo ""
 
-    echo -e " ${BOLD}选择操作：${PLAIN}"
-    echo ""
-    echo -e "   ${CYAN}❖${PLAIN}  创建 Swap 文件                              ${BOLD}1)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  删除 Swap 文件                              ${BOLD}2)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  查看 Swap 状态                              ${BOLD}3)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  返回                                        ${BOLD}0)${PLAIN}"
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择 [ 0-3 ]：${PLAIN}"
-    
     local choice
-    read -r choice
+    choice=$(interactive_menu "选择操作" \
+        "创建 Swap 文件|创建新的 Swap" \
+        "删除 Swap 文件|移除 Swap" \
+        "查看 Swap 状态|详情" \
+        "返回|Back")
 
-    case "$choice" in
-        1)
+    case "${choice%%|*}" in
+        "创建 Swap 文件")
             create_swap
             ;;
-        2)
+        "删除 Swap 文件")
             remove_swap
             ;;
-        3)
+        "查看 Swap 状态")
             show_swap_status
             ;;
-        0|"")
+        "返回"|"")
             return 0
             ;;
     esac
@@ -219,27 +175,19 @@ create_swap() {
         rm -f "$swap_file"
     fi
 
-    print_subtitle "选择 Swap 大小"
-    echo -e "   ${CYAN}❖${PLAIN}  1G                                          ${BOLD}1)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  2G                                          ${BOLD}2)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  4G                                          ${BOLD}3)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  8G                                          ${BOLD}4)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  自定义                                      ${BOLD}5)${PLAIN}"
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择 [ 1-5 ]：${PLAIN}"
-    
     local size_choice
-    read -r size_choice
+    size_choice=$(interactive_menu "选择 Swap 大小" \
+        "1G|1GB" \
+        "2G|2GB" \
+        "4G|4GB" \
+        "8G|8GB" \
+        "自定义|输入自定义大小")
     
-    local size=""
-    case "$size_choice" in
-        1) size="1G" ;;
-        2) size="2G" ;;
-        3) size="4G" ;;
-        4) size="8G" ;;
-        5) size=$(input "Swap 大小 (如 2G)") ;;
-        *) size="2G" ;;
-    esac
+    local size="${size_choice%%|*}"
+    
+    if [[ "$size" == "自定义" ]]; then
+        size=$(input "Swap 大小 (如 2G)")
+    fi
 
     if [ -z "$size" ]; then
         print_warn "已取消"

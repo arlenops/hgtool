@@ -12,34 +12,25 @@ plugin_main() {
     while true; do
         print_title "网络安全"
 
-        echo -e " ${BOLD}请选择操作：${PLAIN}"
-        echo ""
-        echo -e "   ${CYAN}❖${PLAIN}  修改 SSH 端口           安全加固                    ${BOLD}1)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  防火墙管理              端口开放/关闭               ${BOLD}2)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  网络信息                查看网络状态                ${BOLD}3)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  返回主菜单              Back                        ${BOLD}0)${PLAIN}"
-        echo ""
-        echo -ne " ${BOLD}└─ 请输入序号 [ 0-3 ]：${PLAIN}"
-        
         local choice
-        read -r choice
+        choice=$(interactive_menu "请选择操作" \
+            "修改 SSH 端口|安全加固" \
+            "防火墙管理|端口开放/关闭" \
+            "网络信息|查看网络状态" \
+            "返回主菜单|Back")
 
-        case "$choice" in
-            1)
+        case "${choice%%|*}" in
+            "修改 SSH 端口")
                 change_ssh_port
                 ;;
-            2)
+            "防火墙管理")
                 firewall_manager
                 ;;
-            3)
+            "网络信息")
                 show_network_info
                 ;;
-            0|"")
+            "返回主菜单"|"")
                 return 0
-                ;;
-            *)
-                print_warn "无效选项，请重新选择"
-                sleep 1
                 ;;
         esac
     done
@@ -155,64 +146,44 @@ firewall_manager() {
     fi
 
     print_info "防火墙类型: $fw_type"
-    echo ""
 
-    echo -e " ${BOLD}选择操作：${PLAIN}"
-    echo ""
-    echo -e "   ${CYAN}❖${PLAIN}  开放端口                                    ${BOLD}1)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  关闭端口                                    ${BOLD}2)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  查看规则                                    ${BOLD}3)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  重载规则                                    ${BOLD}4)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  返回                                        ${BOLD}0)${PLAIN}"
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择 [ 0-4 ]：${PLAIN}"
-    
     local choice
-    read -r choice
+    choice=$(interactive_menu "选择操作" \
+        "开放端口|添加端口规则" \
+        "关闭端口|移除端口规则" \
+        "查看规则|显示当前规则" \
+        "重载规则|重新加载规则" \
+        "返回|Back")
 
-    case "$choice" in
-        1)
+    case "${choice%%|*}" in
+        "开放端口")
             local port=$(input "端口号" "如: 80 或 8080-8090")
             if [ -n "$port" ]; then
-                echo -e "\n ${BOLD}选择协议：${PLAIN}"
-                echo -e "   ${CYAN}❖${PLAIN}  tcp       ${BOLD}1)${PLAIN}"
-                echo -e "   ${CYAN}❖${PLAIN}  udp       ${BOLD}2)${PLAIN}"
-                echo -e "   ${CYAN}❖${PLAIN}  tcp/udp   ${BOLD}3)${PLAIN}"
-                echo -ne " ${BOLD}└─ 请选择 [ 1-3 ]：${PLAIN}"
                 local proto_choice
-                read -r proto_choice
-                local protocol="tcp"
-                case "$proto_choice" in
-                    2) protocol="udp" ;;
-                    3) protocol="tcp/udp" ;;
-                esac
+                proto_choice=$(interactive_menu "选择协议" "tcp" "udp" "tcp/udp")
+                local protocol="${proto_choice:-tcp}"
                 allow_port "$port" "$protocol"
                 print_success "已开放端口: $port/$protocol"
             fi
             ;;
-        2)
+        "关闭端口")
             local port=$(input "端口号" "如: 80")
             if [ -n "$port" ]; then
-                echo -e "\n ${BOLD}选择协议：${PLAIN}"
-                echo -e "   ${CYAN}❖${PLAIN}  tcp       ${BOLD}1)${PLAIN}"
-                echo -e "   ${CYAN}❖${PLAIN}  udp       ${BOLD}2)${PLAIN}"
-                echo -ne " ${BOLD}└─ 请选择 [ 1-2 ]：${PLAIN}"
                 local proto_choice
-                read -r proto_choice
-                local protocol="tcp"
-                [ "$proto_choice" = "2" ] && protocol="udp"
+                proto_choice=$(interactive_menu "选择协议" "tcp" "udp")
+                local protocol="${proto_choice:-tcp}"
                 deny_port "$port" "$protocol"
                 print_success "已关闭端口: $port/$protocol"
             fi
             ;;
-        3)
+        "查看规则")
             show_firewall_rules "$fw_type"
             ;;
-        4)
+        "重载规则")
             reload_firewall "$fw_type"
             print_success "防火墙规则已重载"
             ;;
-        0|"")
+        "返回"|"")
             return 0
             ;;
     esac

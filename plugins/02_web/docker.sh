@@ -25,44 +25,34 @@ plugin_main() {
         fi
 
         print_info "Docker 状态: $docker_status"
-        echo ""
 
-        echo -e " ${BOLD}请选择操作：${PLAIN}"
-        echo ""
-        echo -e "   ${CYAN}❖${PLAIN}  安装 Docker             安装 Docker 引擎            ${BOLD}1)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  数据目录迁移            迁移 Docker 数据            ${BOLD}2)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  Docker 信息             查看 Docker 状态            ${BOLD}3)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  重启 Docker             重启 Docker 服务            ${BOLD}4)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  清理未使用资源          清理镜像/容器               ${BOLD}5)${PLAIN}"
-        echo -e "   ${CYAN}❖${PLAIN}  返回主菜单              Back                        ${BOLD}0)${PLAIN}"
-        echo ""
-        echo -ne " ${BOLD}└─ 请输入序号 [ 0-5 ]：${PLAIN}"
-        
         local choice
-        read -r choice
+        choice=$(interactive_menu "请选择操作" \
+            "安装 Docker|安装 Docker 引擎" \
+            "数据目录迁移|迁移 Docker 数据" \
+            "Docker 信息|查看 Docker 状态" \
+            "重启 Docker|重启 Docker 服务" \
+            "清理未使用资源|清理镜像/容器" \
+            "返回主菜单|Back")
 
-        case "$choice" in
-            1)
+        case "${choice%%|*}" in
+            "安装 Docker")
                 install_docker
                 ;;
-            2)
+            "数据目录迁移")
                 migrate_docker_data
                 ;;
-            3)
+            "Docker 信息")
                 show_docker_info
                 ;;
-            4)
+            "重启 Docker")
                 restart_docker
                 ;;
-            5)
+            "清理未使用资源")
                 cleanup_docker
                 ;;
-            0|"")
+            "返回主菜单"|"")
                 return 0
-                ;;
-            *)
-                print_warn "无效选项，请重新选择"
-                sleep 1
                 ;;
         esac
     done
@@ -83,25 +73,20 @@ install_docker() {
         fi
     fi
 
-    echo -e " ${BOLD}选择安装方式：${PLAIN}"
-    echo ""
-    echo -e "   ${CYAN}❖${PLAIN}  官方一键脚本 (推荐)                         ${BOLD}1)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  手动安装 (国内镜像)                         ${BOLD}2)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  返回                                        ${BOLD}0)${PLAIN}"
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择 [ 0-2 ]：${PLAIN}"
-    
     local install_choice
-    read -r install_choice
+    install_choice=$(interactive_menu "选择安装方式" \
+        "官方一键脚本|推荐" \
+        "手动安装|国内镜像" \
+        "返回|Back")
 
-    case "$install_choice" in
-        1)
+    case "${install_choice%%|*}" in
+        "官方一键脚本")
             install_docker_official
             ;;
-        2)
+        "手动安装")
             install_docker_manual
             ;;
-        0|"")
+        "返回"|"")
             return 0
             ;;
     esac
@@ -112,24 +97,18 @@ install_docker_official() {
     print_info "使用官方脚本安装 Docker..."
 
     # 选择镜像源
-    echo ""
-    echo -e " ${BOLD}选择镜像源：${PLAIN}"
-    echo ""
-    echo -e "   ${CYAN}❖${PLAIN}  官方源 (国外服务器推荐)                     ${BOLD}1)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  阿里云镜像 (国内推荐)                       ${BOLD}2)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  DaoCloud 镜像                              ${BOLD}3)${PLAIN}"
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择 [ 1-3 ]：${PLAIN}"
-    
     local mirror_choice
-    read -r mirror_choice
+    mirror_choice=$(interactive_menu "选择镜像源" \
+        "官方源|国外服务器推荐" \
+        "阿里云镜像|国内推荐" \
+        "DaoCloud 镜像|备用")
 
     local script_url="https://get.docker.com"
-    case "$mirror_choice" in
-        2)
+    case "${mirror_choice%%|*}" in
+        "阿里云镜像")
             export DOWNLOAD_URL="https://mirrors.aliyun.com/docker-ce"
             ;;
-        3)
+        "DaoCloud 镜像")
             script_url="https://get.daocloud.io/docker"
             ;;
     esac
@@ -223,27 +202,21 @@ configure_docker_mirror() {
     local daemon_json="/etc/docker/daemon.json"
     mkdir -p /etc/docker
 
-    # 选择镜像加速器
-    echo -e " ${BOLD}选择镜像加速器：${PLAIN}"
-    echo ""
-    echo -e "   ${CYAN}❖${PLAIN}  阿里云                                      ${BOLD}1)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  腾讯云                                      ${BOLD}2)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  华为云                                      ${BOLD}3)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  DaoCloud                                    ${BOLD}4)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  全部使用                                    ${BOLD}5)${PLAIN}"
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择 [ 1-5 ]：${PLAIN}"
-    
     local mirror_choice
-    read -r mirror_choice
+    mirror_choice=$(interactive_menu "选择镜像加速器" \
+        "阿里云|稳定" \
+        "腾讯云|备用" \
+        "华为云|备用" \
+        "DaoCloud|备用" \
+        "全部使用|推荐")
 
     local mirror_urls=""
-    case "$mirror_choice" in
-        1) mirror_urls='"https://registry.cn-hangzhou.aliyuncs.com"' ;;
-        2) mirror_urls='"https://mirror.ccs.tencentyun.com"' ;;
-        3) mirror_urls='"https://mirrors.huaweicloud.com"' ;;
-        4) mirror_urls='"https://docker.m.daocloud.io"' ;;
-        5|"") mirror_urls='"https://registry.cn-hangzhou.aliyuncs.com","https://mirror.ccs.tencentyun.com","https://docker.m.daocloud.io"' ;;
+    case "${mirror_choice%%|*}" in
+        "阿里云") mirror_urls='"https://registry.cn-hangzhou.aliyuncs.com"' ;;
+        "腾讯云") mirror_urls='"https://mirror.ccs.tencentyun.com"' ;;
+        "华为云") mirror_urls='"https://mirrors.huaweicloud.com"' ;;
+        "DaoCloud") mirror_urls='"https://docker.m.daocloud.io"' ;;
+        "全部使用"|"") mirror_urls='"https://registry.cn-hangzhou.aliyuncs.com","https://mirror.ccs.tencentyun.com","https://docker.m.daocloud.io"' ;;
     esac
 
     if [ -n "$mirror_urls" ]; then
@@ -441,30 +414,24 @@ cleanup_docker() {
     print_subtitle "当前磁盘使用"
     docker system df
 
-    echo ""
-    echo -e " ${BOLD}选择清理类型：${PLAIN}"
-    echo ""
-    echo -e "   ${CYAN}❖${PLAIN}  清理悬空镜像和缓存                          ${BOLD}1)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  清理所有未使用资源 (谨慎)                   ${BOLD}2)${PLAIN}"
-    echo -e "   ${CYAN}❖${PLAIN}  返回                                        ${BOLD}0)${PLAIN}"
-    echo ""
-    echo -ne " ${BOLD}└─ 请选择 [ 0-2 ]：${PLAIN}"
-    
     local clean_choice
-    read -r clean_choice
+    clean_choice=$(interactive_menu "选择清理类型" \
+        "清理悬空镜像和缓存|安全" \
+        "清理所有未使用资源|谨慎" \
+        "返回|Back")
 
-    case "$clean_choice" in
-        1)
+    case "${clean_choice%%|*}" in
+        "清理悬空镜像和缓存")
             spinner "清理中..." docker system prune -f
             print_success "清理完成！"
             ;;
-        2)
+        "清理所有未使用资源")
             if confirm_danger "这将删除所有未使用的镜像、容器、网络和卷，确认？"; then
                 spinner "清理中..." docker system prune -a --volumes -f
                 print_success "清理完成！"
             fi
             ;;
-        0|"")
+        "返回"|"")
             return 0
             ;;
     esac
