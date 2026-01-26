@@ -143,15 +143,32 @@ interactive_menu() {
     local count=${#items[@]}
     local selected=0
     local key=""
-    local max_name_len=0
-    
+    local max_name_width=0
+
     MENU_RESULT=""
-    
-    # 计算最大名称长度（用于对齐）
+
+    # 计算字符串显示宽度（中文字符占2个宽度）
+    get_display_width() {
+        local str="$1"
+        local width=0
+        local char
+        for ((i=0; i<${#str}; i++)); do
+            char="${str:$i:1}"
+            # 检测是否为多字节字符（中文等）
+            if [[ $(printf '%s' "$char" | wc -c) -gt 1 ]]; then
+                ((width+=2))
+            else
+                ((width+=1))
+            fi
+        done
+        echo $width
+    }
+
+    # 计算最大名称显示宽度（用于对齐）
     for item in "${items[@]}"; do
         local name="${item%%·····*}"
-        local name_len=${#name}
-        [ $name_len -gt $max_name_len ] && max_name_len=$name_len
+        local name_width=$(get_display_width "$name")
+        [ $name_width -gt $max_name_width ] && max_name_width=$name_width
     done
     
     # 隐藏光标
@@ -167,8 +184,8 @@ interactive_menu() {
             if [[ "$item" == *"·····"* ]]; then
                 local name="${item%%·····*}"
                 local desc="${item##*·····}"
-                local name_len=${#name}
-                local padding=$((max_name_len - name_len + 5))
+                local name_width=$(get_display_width "$name")
+                local padding=$((max_name_width - name_width + 5))
                 local dots=""
                 for ((j=0; j<padding; j++)); do
                     dots+="·"
