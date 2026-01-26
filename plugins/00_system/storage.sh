@@ -10,12 +10,12 @@ plugin_main() {
     while true; do
         print_title "存储管理"
 
-        interactive_menu "挂载新磁盘" "分区扩容" "磁盘信息" "返回主菜单"
+        interactive_menu "挂载新磁盘·····格式化并挂载磁盘" "分区扩容·····扩展分区容量" "磁盘信息·····查看磁盘详情" "返回主菜单"
 
         case "$MENU_RESULT" in
-            "挂载新磁盘") mount_new_disk ;;
-            "分区扩容") resize_partition ;;
-            "磁盘信息") show_disk_info ;;
+            "挂载新磁盘·····格式化并挂载磁盘") mount_new_disk ;;
+            "分区扩容·····扩展分区容量") resize_partition ;;
+            "磁盘信息·····查看磁盘详情") show_disk_info ;;
             "返回主菜单"|"") return 0 ;;
         esac
     done
@@ -48,8 +48,9 @@ mount_new_disk() {
     echo -e " ${RED}${BOLD}⚠ 警告：格式化将删除 $disk_path 上的所有数据！${PLAIN}"
     confirm_danger "确认格式化磁盘 $disk_path ？" || { pause; return 0; }
 
-    interactive_menu "ext4" "xfs" "btrfs"
-    local fs_type="${MENU_RESULT:-ext4}"
+    interactive_menu "ext4·····Linux标准文件系统" "xfs·····高性能文件系统" "btrfs·····新一代文件系统"
+    local fs_type="${MENU_RESULT%%·····*}"
+    fs_type="${fs_type:-ext4}"
 
     local mount_point=$(input "挂载点" "/data")
     mount_point="${mount_point:-/data}"

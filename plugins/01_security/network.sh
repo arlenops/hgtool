@@ -3,19 +3,19 @@
 # 网络安全插件
 # ============================================================
 
-PLUGIN_NAME="网络安全"
+PLUGIN_NAME="网络管理"
 PLUGIN_DESC="SSH端口、防火墙管理"
 
 plugin_main() {
     while true; do
-        print_title "网络安全"
+        print_title "网络管理"
 
-        interactive_menu "修改 SSH 端口" "防火墙管理" "网络信息" "返回主菜单"
+        interactive_menu "修改 SSH 端口·····更改远程连接端口" "防火墙管理·····端口开放与关闭" "网络信息·····查看网络详情" "返回主菜单"
 
         case "$MENU_RESULT" in
-            "修改 SSH 端口") change_ssh_port ;;
-            "防火墙管理") firewall_manager ;;
-            "网络信息") show_network_info ;;
+            "修改 SSH 端口·····更改远程连接端口") change_ssh_port ;;
+            "防火墙管理·····端口开放与关闭") firewall_manager ;;
+            "网络信息·····查看网络详情") show_network_info ;;
             "返回主菜单"|"") return 0 ;;
         esac
     done
@@ -58,18 +58,18 @@ firewall_manager() {
     [ -z "$fw_type" ] && { print_error "未检测到防火墙"; pause; return 1; }
     print_info "防火墙: $fw_type"
 
-    interactive_menu "开放端口" "关闭端口" "查看规则" "返回"
+    interactive_menu "开放端口·····允许端口通信" "关闭端口·····禁止端口通信" "查看规则·····显示防火墙规则" "返回"
 
     case "$MENU_RESULT" in
-        "开放端口")
+        "开放端口·····允许端口通信")
             local port=$(input "端口号")
             [ -n "$port" ] && { allow_port "$port" "tcp"; print_success "已开放: $port"; }
             ;;
-        "关闭端口")
+        "关闭端口·····禁止端口通信")
             local port=$(input "端口号")
             [ -n "$port" ] && { deny_port "$port" "tcp"; print_success "已关闭: $port"; }
             ;;
-        "查看规则")
+        "查看规则·····显示防火墙规则")
             case "$fw_type" in
                 firewalld) firewall-cmd --list-all ;;
                 ufw) ufw status verbose ;;

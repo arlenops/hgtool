@@ -10,13 +10,13 @@ plugin_main() {
     while true; do
         print_title "系统管理"
 
-        interactive_menu "系统更新" "时区设置" "Swap 管理" "系统信息" "返回主菜单"
+        interactive_menu "系统更新·····更新系统软件包" "时区设置·····配置系统时区" "Swap 管理·····虚拟内存配置" "系统信息·····查看系统详情" "返回主菜单"
 
         case "$MENU_RESULT" in
-            "系统更新") system_update ;;
-            "时区设置") timezone_setup ;;
-            "Swap 管理") swap_manager ;;
-            "系统信息") show_system_info ;;
+            "系统更新·····更新系统软件包") system_update ;;
+            "时区设置·····配置系统时区") timezone_setup ;;
+            "Swap 管理·····虚拟内存配置") swap_manager ;;
+            "系统信息·····查看系统详情") show_system_info ;;
             "返回主菜单"|"") return 0 ;;
         esac
     done
@@ -43,11 +43,12 @@ timezone_setup() {
     print_title "时区设置"
     print_info "当前时区: $(timedatectl show --property=Timezone --value 2>/dev/null || cat /etc/timezone)"
 
-    interactive_menu "Asia/Shanghai" "Asia/Hong_Kong" "Asia/Tokyo" "America/New_York" "Europe/London" "UTC" "返回"
+    interactive_menu "Asia/Shanghai·····上海时区" "Asia/Hong_Kong·····香港时区" "Asia/Tokyo·····东京时区" "America/New_York·····纽约时区" "Europe/London·····伦敦时区" "UTC·····协调世界时" "返回"
     [[ -z "$MENU_RESULT" ]] || [[ "$MENU_RESULT" == "返回" ]] && return 0
 
-    command_exists timedatectl && timedatectl set-timezone "$MENU_RESULT" || ln -sf "/usr/share/zoneinfo/$MENU_RESULT" /etc/localtime
-    print_success "时区已设置为: $MENU_RESULT"
+    local timezone="${MENU_RESULT%%·····*}"
+    command_exists timedatectl && timedatectl set-timezone "$timezone" || ln -sf "/usr/share/zoneinfo/$timezone" /etc/localtime
+    print_success "时区已设置为: $timezone"
     pause
 }
 
@@ -56,11 +57,11 @@ swap_manager() {
     print_title "Swap 管理"
     print_info "当前 Swap: $(free -h | awk '/^Swap:/{print $2}')"
 
-    interactive_menu "创建 Swap" "删除 Swap" "返回"
+    interactive_menu "创建 Swap·····新建虚拟内存" "删除 Swap·····移除虚拟内存" "返回"
 
     case "$MENU_RESULT" in
-        "创建 Swap") create_swap ;;
-        "删除 Swap") remove_swap ;;
+        "创建 Swap·····新建虚拟内存") create_swap ;;
+        "删除 Swap·····移除虚拟内存") remove_swap ;;
     esac
 }
 
@@ -68,8 +69,9 @@ create_swap() {
     local swap_file="/swapfile"
     [ -f "$swap_file" ] && { swapoff "$swap_file" 2>/dev/null; rm -f "$swap_file"; }
 
-    interactive_menu "1G" "2G" "4G" "8G"
-    local size="${MENU_RESULT:-2G}"
+    interactive_menu "1G·····1GB大小" "2G·····2GB大小" "4G·····4GB大小" "8G·····8GB大小"
+    local size="${MENU_RESULT%%·····*}"
+    size="${size:-2G}"
 
     spinner "创建 Swap ($size)..." fallocate -l "$size" "$swap_file" || dd if=/dev/zero of="$swap_file" bs=1M count=$(echo "$size" | sed 's/G/*1024/' | bc) status=none
     chmod 600 "$swap_file"

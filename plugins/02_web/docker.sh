@@ -14,13 +14,13 @@ plugin_main() {
         command_exists docker && status=$(systemctl is-active docker 2>/dev/null || echo "已安装")
         print_info "Docker: $status"
 
-        interactive_menu "安装 Docker" "数据迁移" "Docker 信息" "清理资源" "返回主菜单"
+        interactive_menu "安装 Docker·····一键安装Docker" "数据迁移·····迁移Docker数据目录" "Docker 信息·····查看Docker详情" "清理资源·····清理无用资源" "返回主菜单"
 
         case "$MENU_RESULT" in
-            "安装 Docker") install_docker ;;
-            "数据迁移") migrate_docker_data ;;
-            "Docker 信息") show_docker_info ;;
-            "清理资源") cleanup_docker ;;
+            "安装 Docker·····一键安装Docker") install_docker ;;
+            "数据迁移·····迁移Docker数据目录") migrate_docker_data ;;
+            "Docker 信息·····查看Docker详情") show_docker_info ;;
+            "清理资源·····清理无用资源") cleanup_docker ;;
             "返回主菜单"|"") return 0 ;;
         esac
     done
@@ -30,11 +30,11 @@ install_docker() {
     require_root || return 1
     print_title "安装 Docker"
 
-    interactive_menu "官方脚本安装" "阿里云镜像安装" "返回"
+    interactive_menu "官方脚本安装·····使用官方源" "阿里云镜像安装·····国内加速" "返回"
     [[ -z "$MENU_RESULT" ]] || [[ "$MENU_RESULT" == "返回" ]] && return 0
 
     local script_url="https://get.docker.com"
-    [[ "$MENU_RESULT" == "阿里云镜像安装" ]] && export DOWNLOAD_URL="https://mirrors.aliyun.com/docker-ce"
+    [[ "$MENU_RESULT" == "阿里云镜像安装·····国内加速" ]] && export DOWNLOAD_URL="https://mirrors.aliyun.com/docker-ce"
 
     spinner "下载脚本..." curl -fsSL "$script_url" -o /tmp/get-docker.sh
     [ ! -f /tmp/get-docker.sh ] && { print_error "下载失败"; pause; return 1; }
@@ -106,11 +106,11 @@ cleanup_docker() {
     require_root || return 1
     command_exists docker || { print_error "Docker 未安装"; pause; return; }
 
-    interactive_menu "清理悬空镜像" "清理所有未使用" "返回"
+    interactive_menu "清理悬空镜像·····删除无标签镜像" "清理所有未使用·····彻底清理" "返回"
 
     case "$MENU_RESULT" in
-        "清理悬空镜像") docker system prune -f; print_success "清理完成" ;;
-        "清理所有未使用") confirm_danger "确认？" && docker system prune -a --volumes -f && print_success "清理完成" ;;
+        "清理悬空镜像·····删除无标签镜像") docker system prune -f; print_success "清理完成" ;;
+        "清理所有未使用·····彻底清理") confirm_danger "确认？" && docker system prune -a --volumes -f && print_success "清理完成" ;;
     esac
     pause
 }
