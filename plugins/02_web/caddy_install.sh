@@ -212,7 +212,7 @@ install_caddy_main() {
     local current_version=""
     current_version=$(check_caddy_installed) || true
     if [ -n "$current_version" ]; then
-        echo "  ⚠️  检测到 Caddy 已安装: $current_version"
+        echo "  检测到 Caddy 已安装: $current_version"
         echo ""
         if ! hg_confirm "是否继续重新安装/升级？"; then
             echo "已取消安装。"
@@ -222,8 +222,8 @@ install_caddy_main() {
     
     # 检测包管理器
     local pkg_manager=$(detect_package_manager)
-    echo "  📦 检测到包管理器: $pkg_manager"
-    echo "  🖥️  系统架构: $(get_os) / $(get_arch)"
+    echo "  检测到包管理器: $pkg_manager"
+    echo "  系统架构: $(get_os) / $(get_arch)"
     echo ""
     
     # 选择安装方式
@@ -267,7 +267,7 @@ install_caddy_main() {
     # 验证安装
     echo ""
     if check_caddy_installed &>/dev/null; then
-        hg_success "✅ Caddy 安装成功！"
+        hg_success "Caddy 安装成功！"
         echo ""
         echo "  版本: $(caddy version)"
         echo "  配置文件: /etc/caddy/Caddyfile"
@@ -284,10 +284,10 @@ install_caddy_main() {
         # 询问是否启动服务
         if hg_confirm "是否现在启动 Caddy 服务？"; then
             hg_process "启动 Caddy 服务..." "systemctl start caddy && systemctl enable caddy"
-            hg_success "✅ Caddy 服务已启动并设置为开机自启"
+            hg_success "Caddy 服务已启动并设置为开机自启"
         fi
     else
-        hg_error "❌ Caddy 安装失败，请检查错误信息"
+        hg_error "Caddy 安装失败，请检查错误信息"
         return 1
     fi
 }
