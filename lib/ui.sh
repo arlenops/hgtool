@@ -115,22 +115,27 @@ print_banner() {
     local os_info=$(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 | cut -d' ' -f1-2 || echo "Linux")
     local local_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "N/A")
     
+    # 截断过长的值
+    hostname="${hostname:0:12}"
+    os_info="${os_info:0:12}"
+    local_ip="${local_ip:0:15}"
+    
     clear
     echo ""
-    echo -e "${BLUE}╔═══════════════════════════════════════════════════════════════╗${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}                                                               ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}██╗  ██╗ ██████╗ ████████╗ ██████╗  ██████╗ ██╗${PLAIN}             ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}██║  ██║██╔════╝ ╚══██╔══╝██╔═══██╗██╔═══██╗██║${PLAIN}             ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}███████║██║  ███╗   ██║   ██║   ██║██║   ██║██║${PLAIN}             ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}██╔══██║██║   ██║   ██║   ██║   ██║██║   ██║██║${PLAIN}             ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}██║  ██║╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝███████╗${PLAIN}        ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝${PLAIN}        ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}                                                               ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}              ${BOLD}黑果云运维工具箱${PLAIN} ${DIM}v${VERSION:-1.0.0}${PLAIN}                        ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}                                                               ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}╠═══════════════════════════════════════════════════════════════╣${PLAIN}"
-    printf "${BLUE}║${PLAIN}  主机: ${GREEN}%-12s${PLAIN} │ 系统: ${GREEN}%-12s${PLAIN} │ IP: ${GREEN}%-15s${PLAIN}${BLUE}║${PLAIN}\n" "$hostname" "$os_info" "$local_ip"
-    echo -e "${BLUE}╚═══════════════════════════════════════════════════════════════╝${PLAIN}"
+    echo -e "${BLUE}╔═════════════════════════════════════════════════════════════╗${PLAIN}"
+    echo -e "${BLUE}║                                                             ║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}██╗  ██╗ ██████╗ ████████╗ ██████╗  ██████╗ ██╗${PLAIN}           ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}██║  ██║██╔════╝ ╚══██╔══╝██╔═══██╗██╔═══██╗██║${PLAIN}           ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}███████║██║  ███╗   ██║   ██║   ██║██║   ██║██║${PLAIN}           ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}██╔══██║██║   ██║   ██║   ██║   ██║██║   ██║██║${PLAIN}           ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}██║  ██║╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝███████╗${PLAIN}      ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝${PLAIN}      ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║                                                             ║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}               ${BOLD}黑果云运维工具箱${PLAIN} ${DIM}v${VERSION:-1.0.0}${PLAIN}                     ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║                                                             ║${PLAIN}"
+    echo -e "${BLUE}╠═════════════════════════════════════════════════════════════╣${PLAIN}"
+    printf "${BLUE}║${PLAIN}  主机: ${GREEN}%-12s${PLAIN} │ 系统: ${GREEN}%-12s${PLAIN} │ IP: ${GREEN}%-13s${PLAIN} ${BLUE}║${PLAIN}\n" "$hostname" "$os_info" "$local_ip"
+    echo -e "${BLUE}╚═════════════════════════════════════════════════════════════╝${PLAIN}"
     echo ""
 }
 
@@ -155,50 +160,45 @@ interactive_menu() {
     # 隐藏光标
     tput civis 2>/dev/null
     
-    # 保存当前位置
-    local start_row
-    start_row=$(tput lines 2>/dev/null || echo 24)
-    
     while true; do
-        # 清除之前的菜单显示
-        echo -ne "\033[2K"  # 清除当前行
-        
-        # 显示提示
-        echo ""
-        echo -e " ${BOLD}${prompt}${PLAIN}"
-        echo -e " ${DIM}(↑/↓ 移动, Enter 确认, q 取消)${PLAIN}"
-        echo ""
-        
-        # 显示菜单项
-        for i in "${!items[@]}"; do
-            local item="${items[$i]}"
+        # 显示提示（输出到 /dev/tty 以便在子shell中也能显示）
+        {
+            echo ""
+            echo -e " ${BOLD}${prompt}${PLAIN}"
+            echo -e " ${DIM}(↑/↓ 移动, Enter 确认, q 取消)${PLAIN}"
+            echo ""
             
-            # 分离名称和描述
-            if [[ "$item" == *"|"* ]]; then
-                local name="${item%%|*}"
-                local desc="${item#*|}"
-            else
-                local name="$item"
-                local desc=""
-            fi
+            # 显示菜单项
+            for i in "${!items[@]}"; do
+                local item="${items[$i]}"
+                
+                # 分离名称和描述
+                if [[ "$item" == *"|"* ]]; then
+                    local name="${item%%|*}"
+                    local desc="${item#*|}"
+                else
+                    local name="$item"
+                    local desc=""
+                fi
+                
+                if [ $i -eq $selected ]; then
+                    # 选中项 - 高亮显示
+                    echo -e "   ${GREEN}▶${PLAIN} ${GREEN}${BOLD}${name}${PLAIN}  ${DIM}${desc}${PLAIN}"
+                else
+                    # 普通项
+                    echo -e "     ${name}  ${DIM}${desc}${PLAIN}"
+                fi
+            done
             
-            if [ $i -eq $selected ]; then
-                # 选中项 - 高亮显示
-                echo -e "   ${GREEN}▶${PLAIN} ${GREEN}${BOLD}${name}${PLAIN}  ${DIM}${desc}${PLAIN}"
-            else
-                # 普通项
-                echo -e "     ${DIM}${name}${PLAIN}  ${DIM}${desc}${PLAIN}"
-            fi
-        done
+            echo ""
+        } >/dev/tty
         
-        echo ""
-        
-        # 读取按键
-        IFS= read -rsn1 key
+        # 读取按键（从 /dev/tty）
+        IFS= read -rsn1 key </dev/tty
         
         case "$key" in
             $'\x1b')  # ESC 序列开始（方向键）
-                read -rsn2 -t 0.1 key
+                read -rsn2 -t 0.1 key </dev/tty
                 case "$key" in
                     '[A')  # 上键
                         ((selected--))
@@ -221,7 +221,7 @@ interactive_menu() {
             '')  # Enter 键
                 # 显示光标
                 tput cnorm 2>/dev/null
-                # 返回选中项
+                # 返回选中项（这个输出到 stdout，会被 $() 捕获）
                 echo "${items[$selected]}"
                 return 0
                 ;;
@@ -233,7 +233,7 @@ interactive_menu() {
         esac
         
         # 移动光标回到菜单开始位置重新绘制
-        echo -ne "\033[$((count + 5))A"
+        echo -ne "\033[$((count + 5))A" >/dev/tty
     done
 }
 
