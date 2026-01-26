@@ -10,26 +10,36 @@ PLUGIN_DESC="磁盘挂载、分区扩容"
 # 插件主入口
 plugin_main() {
     while true; do
-        hg_title "存储管理"
+        print_title "存储管理"
 
-        local choice=$(hg_choose "请选择操作" \
-            "挂载新磁盘" \
-            "分区扩容" \
-            "磁盘信息" \
-            "返回主菜单")
+        echo -e " ${BOLD}请选择操作：${PLAIN}"
+        echo ""
+        echo -e "   ${CYAN}❖${PLAIN}  挂载新磁盘              格式化并挂载新磁盘          ${BOLD}1)${PLAIN}"
+        echo -e "   ${CYAN}❖${PLAIN}  分区扩容                扩展现有分区                ${BOLD}2)${PLAIN}"
+        echo -e "   ${CYAN}❖${PLAIN}  磁盘信息                查看磁盘状态                ${BOLD}3)${PLAIN}"
+        echo -e "   ${CYAN}❖${PLAIN}  返回主菜单              Back                        ${BOLD}0)${PLAIN}"
+        echo ""
+        echo -ne " ${BOLD}└─ 请输入序号 [ 0-3 ]：${PLAIN}"
+        
+        local choice
+        read -r choice
 
         case "$choice" in
-            "挂载新磁盘")
+            1)
                 mount_new_disk
                 ;;
-            "分区扩容")
+            2)
                 resize_partition
                 ;;
-            "磁盘信息")
+            3)
                 show_disk_info
                 ;;
-            "返回主菜单"|"")
+            0|"")
                 return 0
+                ;;
+            *)
+                print_warn "无效选项，请重新选择"
+                sleep 1
                 ;;
         esac
     done
@@ -39,82 +49,82 @@ plugin_main() {
 mount_new_disk() {
     require_root || return 1
 
-    hg_title "挂载新磁盘"
+    print_title "挂载新磁盘"
 
     # 获取未挂载的磁盘列表
-    hg_info "扫描可用磁盘..."
+    print_info "扫描可用磁盘..."
+    echo ""
 
     # 显示所有磁盘
-    echo ""
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE | "$GUM" style --foreground "$INFO_COLOR"
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE | column -t
     echo ""
 
-    # 获取未挂载的磁盘（排除已挂载和系统盘）
+    # 获取未挂载的磁盘
     local disks=$(lsblk -dpno NAME,SIZE,TYPE | grep "disk" | awk '{print $1" ("$2")"}')
 
     if [ -z "$disks" ]; then
-        hg_error "未找到可用磁盘"
+        print_error "未找到可用磁盘"
+        pause
         return 1
     fi
 
     # 选择磁盘
-    local selected_disk=$(echo "$disks" | fzf_menu_wrapper)
-
-    if [ -z "$selected_disk" ]; then
-        hg_warn "已取消"
+    print_subtitle "可用磁盘"
+    local -a disk_list=()
+    local i=1
+    while IFS= read -r line; do
+        echo -e "   ${CYAN}❖${PLAIN}  $line  ${BOLD}${i})${PLAIN}"
+        disk_list+=("$line")
+        ((i++))
+    done <<< "$disks"
+    
+    echo ""
+    echo -ne " ${BOLD}└─ 请选择磁盘 [ 1-$((i-1)) ]：${PLAIN}"
+    local disk_choice
+    read -r disk_choice
+    
+    if [[ -z "$disk_choice" ]] || ! [[ "$disk_choice" =~ ^[0-9]+$ ]] || [ "$disk_choice" -lt 1 ] || [ "$disk_choice" -gt $((i-1)) ]; then
+        print_warn "已取消"
+        pause
         return 0
     fi
-
+    
+    local selected_disk="${disk_list[$((disk_choice-1))]}"
     local disk_path=$(echo "$selected_disk" | awk '{print $1}')
 
-    # 检查磁盘是否已有分区
-    local partitions=$(lsblk -pno NAME "$disk_path" | tail -n +2)
-
-    if [ -n "$partitions" ]; then
-        hg_warn "该磁盘已有分区:"
-        echo "$partitions"
-        echo ""
-    fi
-
     # 危险确认
-    "$GUM" style \
-        --foreground "$ERROR_COLOR" \
-        --bold \
-        --border "rounded" \
-        --border-foreground "$ERROR_COLOR" \
-        --padding "1" \
-        "⚠️  警告：格式化将删除 $disk_path 上的所有数据！"
-
-    if ! hg_confirm_danger "确认格式化磁盘 $disk_path ？"; then
-        hg_warn "已取消"
-        return 0
-    fi
-
-    # 二次确认
-    local confirm_text=$(hg_input "请输入 YES 确认" "输入 YES 继续")
-    if [ "$confirm_text" != "YES" ]; then
-        hg_warn "已取消"
+    echo ""
+    echo -e " ${RED}${BOLD}⚠ 警告：格式化将删除 $disk_path 上的所有数据！${PLAIN}"
+    
+    if ! confirm_danger "确认格式化磁盘 $disk_path ？"; then
+        pause
         return 0
     fi
 
     # 选择文件系统
-    local fs_type=$(hg_choose "选择文件系统" \
-        "ext4 (推荐)" \
-        "xfs" \
-        "btrfs")
-
-    fs_type=$(echo "$fs_type" | awk '{print $1}')
+    print_subtitle "选择文件系统"
+    echo -e "   ${CYAN}❖${PLAIN}  ext4 (推荐)                               ${BOLD}1)${PLAIN}"
+    echo -e "   ${CYAN}❖${PLAIN}  xfs                                       ${BOLD}2)${PLAIN}"
+    echo -e "   ${CYAN}❖${PLAIN}  btrfs                                     ${BOLD}3)${PLAIN}"
+    echo ""
+    echo -ne " ${BOLD}└─ 请选择 [ 1-3 ]：${PLAIN}"
+    local fs_choice
+    read -r fs_choice
+    
+    local fs_type="ext4"
+    case "$fs_choice" in
+        2) fs_type="xfs" ;;
+        3) fs_type="btrfs" ;;
+    esac
 
     # 输入挂载点
-    local mount_point=$(hg_input "挂载点" "/data")
-
-    if [ -z "$mount_point" ]; then
-        mount_point="/data"
-    fi
+    local mount_point
+    mount_point=$(input "挂载点" "/data")
+    mount_point="${mount_point:-/data}"
 
     # 创建分区
-    hg_spin "创建分区表..." parted -s "$disk_path" mklabel gpt
-    hg_spin "创建分区..." parted -s "$disk_path" mkpart primary "$fs_type" 0% 100%
+    spinner "创建分区表..." parted -s "$disk_path" mklabel gpt
+    spinner "创建分区..." parted -s "$disk_path" mkpart primary "$fs_type" 0% 100%
 
     # 获取分区名
     local partition="${disk_path}1"
@@ -125,13 +135,13 @@ mount_new_disk() {
     sleep 1  # 等待内核识别分区
 
     # 格式化
-    hg_spin "格式化分区 ($fs_type)..." mkfs."$fs_type" -f "$partition" 2>/dev/null || mkfs."$fs_type" "$partition"
+    spinner "格式化分区 ($fs_type)..." mkfs."$fs_type" -f "$partition" 2>/dev/null || mkfs."$fs_type" "$partition"
 
     # 创建挂载点
     mkdir -p "$mount_point"
 
     # 挂载
-    hg_spin "挂载分区..." mount "$partition" "$mount_point"
+    spinner "挂载分区..." mount "$partition" "$mount_point"
 
     # 获取 UUID
     local uuid=$(blkid -s UUID -o value "$partition")
@@ -142,44 +152,59 @@ mount_new_disk() {
         echo "UUID=$uuid $mount_point $fs_type defaults 0 2" >> /etc/fstab
     fi
 
-    hg_success "磁盘挂载成功！"
-    hg_info "分区: $partition"
-    hg_info "挂载点: $mount_point"
-    hg_info "文件系统: $fs_type"
+    print_success "磁盘挂载成功！"
+    print_info "分区: $partition"
+    print_info "挂载点: $mount_point"
+    print_info "文件系统: $fs_type"
 
     log_info "挂载磁盘: $disk_path -> $mount_point ($fs_type)"
 
-    hg_pause
+    pause
 }
 
 # 分区扩容
 resize_partition() {
     require_root || return 1
 
-    hg_title "分区扩容"
+    print_title "分区扩容"
 
-    hg_info "此功能用于云服务器磁盘扩容后的分区扩展"
+    print_info "此功能用于云服务器磁盘扩容后的分区扩展"
     echo ""
 
     # 显示当前磁盘信息
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT | "$GUM" style --foreground "$INFO_COLOR"
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT | column -t
     echo ""
 
     # 选择要扩容的分区
     local partitions=$(lsblk -pno NAME,SIZE,MOUNTPOINT | grep -E "part|lvm" | awk '{print $1" "$2" "$3}')
 
     if [ -z "$partitions" ]; then
-        hg_error "未找到可扩容的分区"
+        print_error "未找到可扩容的分区"
+        pause
         return 1
     fi
 
-    local selected=$(echo "$partitions" | fzf_menu_wrapper)
-
-    if [ -z "$selected" ]; then
-        hg_warn "已取消"
+    print_subtitle "可扩容分区"
+    local -a part_list=()
+    local i=1
+    while IFS= read -r line; do
+        echo -e "   ${CYAN}❖${PLAIN}  $line  ${BOLD}${i})${PLAIN}"
+        part_list+=("$line")
+        ((i++))
+    done <<< "$partitions"
+    
+    echo ""
+    echo -ne " ${BOLD}└─ 请选择分区 [ 1-$((i-1)) ]：${PLAIN}"
+    local part_choice
+    read -r part_choice
+    
+    if [[ -z "$part_choice" ]] || ! [[ "$part_choice" =~ ^[0-9]+$ ]] || [ "$part_choice" -lt 1 ] || [ "$part_choice" -gt $((i-1)) ]; then
+        print_warn "已取消"
+        pause
         return 0
     fi
 
+    local selected=$(echo "${part_list[$((part_choice-1))]}")
     local partition=$(echo "$selected" | awk '{print $1}')
     local mount_point=$(echo "$selected" | awk '{print $3}')
 
@@ -187,18 +212,19 @@ resize_partition() {
     local disk=$(echo "$partition" | sed 's/[0-9]*$//' | sed 's/p$//')
     local part_num=$(echo "$partition" | grep -oE '[0-9]+$')
 
-    hg_info "磁盘: $disk"
-    hg_info "分区: $partition (分区号: $part_num)"
-    hg_info "挂载点: $mount_point"
+    print_info "磁盘: $disk"
+    print_info "分区: $partition (分区号: $part_num)"
+    print_info "挂载点: $mount_point"
 
-    if ! hg_confirm "确认扩容分区 $partition ？"; then
-        hg_warn "已取消"
+    if ! confirm "确认扩容分区 $partition ？"; then
+        print_warn "已取消"
+        pause
         return 0
     fi
 
     # 检查是否安装 growpart
     if ! command_exists growpart; then
-        hg_info "安装 growpart..."
+        print_info "安装 growpart..."
         local pkg_mgr=$(get_pkg_manager)
         case "$pkg_mgr" in
             apt)
@@ -211,7 +237,7 @@ resize_partition() {
     fi
 
     # 扩展分区
-    hg_spin "扩展分区..." growpart "$disk" "$part_num"
+    spinner "扩展分区..." growpart "$disk" "$part_num"
 
     # 获取文件系统类型
     local fs_type=$(blkid -s TYPE -o value "$partition")
@@ -219,28 +245,30 @@ resize_partition() {
     # 扩展文件系统
     case "$fs_type" in
         ext4|ext3|ext2)
-            hg_spin "扩展文件系统 (ext4)..." resize2fs "$partition"
+            spinner "扩展文件系统 (ext4)..." resize2fs "$partition"
             ;;
         xfs)
             if [ -n "$mount_point" ]; then
-                hg_spin "扩展文件系统 (xfs)..." xfs_growfs "$mount_point"
+                spinner "扩展文件系统 (xfs)..." xfs_growfs "$mount_point"
             else
-                hg_error "XFS 分区需要先挂载才能扩容"
+                print_error "XFS 分区需要先挂载才能扩容"
+                pause
                 return 1
             fi
             ;;
         btrfs)
             if [ -n "$mount_point" ]; then
-                hg_spin "扩展文件系统 (btrfs)..." btrfs filesystem resize max "$mount_point"
+                spinner "扩展文件系统 (btrfs)..." btrfs filesystem resize max "$mount_point"
             fi
             ;;
         *)
-            hg_error "不支持的文件系统: $fs_type"
+            print_error "不支持的文件系统: $fs_type"
+            pause
             return 1
             ;;
     esac
 
-    hg_success "分区扩容完成！"
+    print_success "分区扩容完成！"
 
     # 显示新的大小
     echo ""
@@ -248,26 +276,28 @@ resize_partition() {
 
     log_info "分区扩容: $partition"
 
-    hg_pause
+    pause
 }
 
 # 显示磁盘信息
 show_disk_info() {
-    hg_title "磁盘信息"
+    print_title "磁盘信息"
 
     # 磁盘列表
-    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "[ 磁盘列表 ]"
-    echo ""
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE 2>/dev/null | column -t | "$GUM" style --foreground "$INFO_COLOR"
+    print_subtitle "磁盘列表"
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE 2>/dev/null | column -t | while IFS= read -r line; do
+        echo -e "   ${CYAN}${line}${PLAIN}"
+    done
     echo ""
 
     # 磁盘使用情况
-    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "[ 磁盘使用情况 ]"
-    echo ""
-    df -h 2>/dev/null | grep -E "^Filesystem|^文件系统|^/dev" | column -t | "$GUM" style --foreground "$INFO_COLOR"
+    print_subtitle "磁盘使用情况"
+    df -h 2>/dev/null | grep -E "^Filesystem|^文件系统|^/dev" | column -t | while IFS= read -r line; do
+        echo -e "   ${CYAN}${line}${PLAIN}"
+    done
     echo ""
 
-    hg_pause
+    pause
 }
 
 # 执行插件

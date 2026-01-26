@@ -1,174 +1,140 @@
 #!/bin/bash
 # ============================================================
 # hgtool - 黑果云运维工具箱
-# 核心理念：颜值即正义，效率即生命
+# 模仿 LinuxMirrors 风格重构
 #
 # 特性:
-#   - 零依赖：首次运行自动下载 gum/fzf
-#   - 模块化：插件式架构，易于扩展
-#   - 美观：全程使用 gum/fzf 渲染 UI
+#   - 零依赖：无需外部工具
+#   - 模块化：插件式架构
+#   - 美观：纯 ANSI 终端 UI
 # ============================================================
+
+# 版本号
+VERSION="1.0.0"
 
 # 1. 定义工作目录
 ROOT_DIR=$(cd "$(dirname "$0")"; pwd)
 export ROOT_DIR
+export VERSION
 
 # 2. 引用核心库
 source "$ROOT_DIR/lib/deps.sh"
 source "$ROOT_DIR/lib/utils.sh"
 
-# 3. 环境自检 - 检查并下载 gum
+# 3. 环境自检
 check_and_install_dependencies
 
-# 4. 现在可以加载 UI 库了（依赖 gum）
+# 4. 加载 UI 库
 source "$ROOT_DIR/lib/ui.sh"
 
 # 5. 权限检查
 check_root_privileges
 
-# 6. 显示欢迎界面
-hg_banner
-
 # ============================================================
 # 主菜单逻辑
 # ============================================================
 
-# 生成插件菜单项
-generate_menu_items() {
-    local items=()
-
+# 生成插件列表
+generate_plugin_list() {
+    local -a names=()
+    local -a descs=()
+    local -a files=()
+    
     # 扫描插件目录
     for category_dir in "$ROOT_DIR/plugins"/*; do
         if [ -d "$category_dir" ]; then
-            local category_name=$(basename "$category_dir")
-
             for plugin_file in "$category_dir"/*.sh; do
                 if [ -f "$plugin_file" ]; then
-                    # 读取插件名称
-                    local plugin_name=$(grep -m1 "^PLUGIN_NAME=" "$plugin_file" 2>/dev/null | cut -d'"' -f2 || echo "")
-                    local plugin_desc=$(grep -m1 "^PLUGIN_DESC=" "$plugin_file" 2>/dev/null | cut -d'"' -f2 || echo "")
-
-                    if [ -n "$plugin_name" ]; then
-                        echo "$plugin_name|$plugin_desc|$plugin_file"
+                    local name=$(grep -m1 "^PLUGIN_NAME=" "$plugin_file" 2>/dev/null | cut -d'"' -f2)
+                    local desc=$(grep -m1 "^PLUGIN_DESC=" "$plugin_file" 2>/dev/null | cut -d'"' -f2)
+                    
+                    if [ -n "$name" ]; then
+                        names+=("$name")
+                        descs+=("$desc")
+                        files+=("$plugin_file")
                     fi
                 fi
             done
         fi
     done
-}
-
-# 格式化菜单显示（表格化对齐，无编号）
-format_menu_item_no_number() {
-    local name="$1"
-    local desc="$2"
-    local target_width=16  # 名称列目标显示宽度
-
-    # 计算实际显示宽度（中文占2，英文占1）
-    local display_width=$(echo -n "$name" | wc -L)
-    local padding=$((target_width - display_width))
     
-    # 生成填充空格
-    local spaces=""
-    for ((i=0; i<padding; i++)); do
-        spaces+=" "
-    done
-
-    # 移除编号，直接显示名称和描述，左侧适当缩进
-    printf "  %s%s│ %s" "$name" "$spaces" "$desc"
+    # 返回结果（使用全局变量）
+    PLUGIN_NAMES=("${names[@]}")
+    PLUGIN_DESCS=("${descs[@]}")
+    PLUGIN_FILES=("${files[@]}")
 }
 
 # 主菜单
 main_menu() {
+    # 生成插件列表
+    generate_plugin_list
+    
+    local count=${#PLUGIN_NAMES[@]}
+    
     while true; do
-        hg_banner
-        # echo "" (hg_banner结尾已经有空行了，不需要再加)
-        "$GUM" style --foreground "$PRIMARY_COLOR" --bold "  请选择要执行的操作:"
-        echo ""
-
-        # 生成菜单数据
-        local menu_data=$(generate_menu_items)
-        local plugin_map=()
-        local menu_display_items=()
-        local count=0
-
-        # 遍历并生成菜单项
-        while IFS='|' read -r name desc file; do
-            if [ -n "$name" ]; then
-                ((count++))
-                plugin_map[$count]="$file"
-                # 生成格式化字符串 (去掉开头的空格，因为 gum choose 会处理选择指针)
-                local display_text=$(format_menu_item_no_number "$name" "$desc" | sed 's/^ //')
-                menu_display_items+=("$display_text")
-            fi
-        done <<< "$menu_data"
-
-        # 添加退出选项 (与上方保持对齐)
-        local exit_opt=$(format_menu_item_no_number "退出程序" "Exit" | sed 's/^ //')
-        menu_display_items+=("$exit_opt")
-
-        # 使用 gum choose 显示菜单
-        # --height 限定高度
-        # --cursor.foreground 设定光标颜色
-        local choice
-        choice=$("$GUM" choose \
-            --height=15 \
-            --cursor="> " \
-            --cursor.foreground "$ACCENT_COLOR" \
-            --item.foreground "$DIM_COLOR" \
-            --selected.foreground "$PRIMARY_COLOR" \
-            "${menu_display_items[@]}")
-
-        # 处理选择
-        if [ -z "$choice" ]; then
-            # Esc 或 ctrl-c 退出 (或者什么都没选)
-            # 在 gum choose 中，Esc 默认返回非零，这里 choice 可能为空
-            if [ $? -ne 0 ]; then
-                 continue # 或者退出? 通常 Esc 期望退出或取消。这里我们视为空选择，重新循环
-            fi
-        fi
-
-        # 查找选择的索引
-        local selected_index=-1
-        for i in "${!menu_display_items[@]}"; do
-            if [[ "${menu_display_items[$i]}" == "$choice" ]]; then
-                # 数组索引从0开始，但我们的 plugin_map 是从1开始计数的 (因为 count 从1开始)
-                # 菜单项数组下标 0 对应 plugin_map 1
-                # 最后一个是退出选项
-                selected_index=$i
-                break
-            fi
+        # 显示 Banner
+        print_banner
+        
+        # 构建菜单项
+        local -a menu_items=()
+        for i in "${!PLUGIN_NAMES[@]}"; do
+            menu_items+=("${PLUGIN_NAMES[$i]}|${PLUGIN_DESCS[$i]}")
         done
-
-        # 处理退出 (检查是否包含 "退出程序")
-        if [[ "$choice" == *"退出程序"* ]]; then
-            hg_banner
-            "$GUM" style \
-                --foreground "$ACCENT_COLOR" \
-                --bold \
-                --border "rounded" \
-                --border-foreground "$ACCENT_COLOR" \
-                --padding "1 2" \
-                --margin "1" \
-                --align "center" \
-                "👋 感谢使用 hgtool！
-                
-再见！"
-            exit 0
-        fi
-
-        # 执行插件
-        # plugin_map 的key是从 1 到 count
-        # menu_display_items 的key是从 0 到 count-1 (对应插件) 和 count (退出)
-        # 所以 plugin_key = selected_index + 1
-        if [ "$selected_index" -ge 0 ]; then
-             local plugin_key=$((selected_index + 1))
-             local plugin_file="${plugin_map[$plugin_key]}"
-             
-             if [ -f "$plugin_file" ]; then
-                # 执行插件
-                source "$plugin_file"
-             fi
-        fi
+        menu_items+=("退出程序|Exit")
+        
+        # 显示菜单
+        echo -e " ${BOLD}请选择要执行的操作：${PLAIN}"
+        echo ""
+        
+        for i in "${!menu_items[@]}"; do
+            local item="${menu_items[$i]}"
+            local name="${item%%|*}"
+            local desc="${item#*|}"
+            local num=$((i + 1))
+            
+            # 最后一项是退出，编号为 0
+            if [ $i -eq $count ]; then
+                num=0
+            fi
+            
+            printf "   ${CYAN}❖${PLAIN}  %-16s ${DIM}%-30s${PLAIN} ${BOLD}%d)${PLAIN}\n" "$name" "$desc" "$num"
+        done
+        
+        echo ""
+        echo -ne " ${BOLD}└─ 请输入序号 [ 0-${count} ]：${PLAIN}"
+        
+        local choice
+        read -r choice
+        
+        # 处理选择
+        case "$choice" in
+            0)
+                # 退出
+                clear
+                echo ""
+                echo -e " ${GREEN}${BOLD}👋 感谢使用 hgtool！再见！${PLAIN}"
+                echo ""
+                exit 0
+                ;;
+            [1-9]|[1-9][0-9])
+                if [ "$choice" -le "$count" ]; then
+                    local plugin_file="${PLUGIN_FILES[$((choice-1))]}"
+                    if [ -f "$plugin_file" ]; then
+                        source "$plugin_file"
+                    fi
+                else
+                    print_warn "无效的选项，请重新选择"
+                    sleep 1
+                fi
+                ;;
+            "")
+                # 空输入，刷新
+                ;;
+            *)
+                print_warn "无效的选项，请重新选择"
+                sleep 1
+                ;;
+        esac
     done
 }
 
@@ -177,44 +143,38 @@ main_menu() {
 # ============================================================
 
 show_help() {
-    "$GUM" style \
-        --border "rounded" \
-        --border-foreground "$PRIMARY_COLOR" \
-        --padding "1" \
-        "hgtool - 黑果云运维工具箱 v$VERSION
-
-用法:
-  ./hgtool.sh [选项]
-
-选项:
-  -h, --help      显示帮助信息
-  -v, --version   显示版本信息
-  -l, --list      列出所有可用插件
-
-示例:
-  ./hgtool.sh           # 启动交互式菜单
-  sudo ./hgtool.sh      # 以 root 权限运行（推荐）"
+    echo ""
+    echo -e " ${BOLD}hgtool - 黑果云运维工具箱 v${VERSION}${PLAIN}"
+    echo ""
+    echo " 用法:"
+    echo "   ./hgtool.sh [选项]"
+    echo ""
+    echo " 选项:"
+    echo "   -h, --help      显示帮助信息"
+    echo "   -v, --version   显示版本信息"
+    echo "   -l, --list      列出所有可用插件"
+    echo ""
+    echo " 示例:"
+    echo "   ./hgtool.sh           # 启动交互式菜单"
+    echo "   sudo ./hgtool.sh      # 以 root 权限运行（推荐）"
+    echo ""
 }
 
 show_version() {
-    "$GUM" style \
-        --foreground "$PRIMARY_COLOR" \
-        --bold \
-        "hgtool v$VERSION"
+    echo "hgtool v${VERSION}"
 }
 
 list_plugins() {
-    "$GUM" style \
-        --foreground "$PRIMARY_COLOR" \
-        --bold \
-        "可用插件列表:"
-
+    generate_plugin_list
+    
     echo ""
-    generate_menu_items | while IFS='|' read -r name desc file; do
-        if [ -n "$name" ]; then
-            echo "  • $name - $desc"
-        fi
+    echo -e " ${BOLD}可用插件列表：${PLAIN}"
+    echo ""
+    
+    for i in "${!PLUGIN_NAMES[@]}"; do
+        echo -e "   ${CYAN}❖${PLAIN}  ${PLUGIN_NAMES[$i]} - ${DIM}${PLUGIN_DESCS[$i]}${PLAIN}"
     done
+    echo ""
 }
 
 # 解析命令行参数
@@ -235,11 +195,11 @@ case "${1:-}" in
         # 无参数，启动主菜单
         ;;
     *)
-        hg_error "未知选项: $1"
+        print_error "未知选项: $1"
         echo "使用 ./hgtool.sh --help 查看帮助"
         exit 1
         ;;
 esac
 
-# 7. 进入主循环
+# 6. 进入主循环
 main_menu

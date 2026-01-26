@@ -1,372 +1,367 @@
 #!/bin/bash
 # ============================================================
-# ui.sh - UI 渲染函数库
-# 封装所有颜色、Banner、Gum 组件
-# 所有交互必须使用 gum/fzf，禁止 echo 菜单
+# ui.sh - UI 渲染函数库（纯 ANSI 版本）
+# 模仿 LinuxMirrors 代码风格
+# 无外部依赖，使用纯 ANSI 转义码
 # ============================================================
 
 # ============================================================
-# Tokyo Night 风格配色
+# 颜色定义（ANSI 转义码）
 # ============================================================
-PRIMARY_COLOR="#7aa2f7"    # 柔和蓝紫 - 主色调
-SECONDARY_COLOR="#bb9af7"  # 淡紫色 - 次要色调
-ACCENT_COLOR="#9ece6a"     # 清新绿 - 成功/强调
-WARNING_COLOR="#e0af68"    # 暖橙色 - 警告
-ERROR_COLOR="#f7768e"      # 柔红色 - 错误
-INFO_COLOR="#7dcfff"       # 天蓝色 - 信息
-DIM_COLOR="#565f89"        # 暗灰色 - 次要文字
-BG_HIGHLIGHT="#24283b"     # 高亮背景
+RED='\033[31m'
+GREEN='\033[32m'
+YELLOW='\033[33m'
+BLUE='\033[34m'
+PURPLE='\033[35m'
+CYAN='\033[36m'
+WHITE='\033[37m'
+PLAIN='\033[0m'
+BOLD='\033[1m'
+DIM='\033[2m'
 
-# 渐变色数组（用于Logo等）
-GRADIENT_COLORS=(
-    "#bb9af7"  # 紫
-    "#7aa2f7"  # 蓝紫
-    "#7dcfff"  # 天蓝
-    "#7dcfff"  # 天蓝
-    "#2ac3de"  # 青
-    "#2ac3de"  # 青
-)
-
-# gum 路径
-GUM="${ROOT_DIR}/bin/gum"
-FZF="${ROOT_DIR}/bin/fzf"
+# 状态图标
+SUCCESS="${GREEN}✔${PLAIN}"
+ERROR="${RED}✘${PLAIN}"
+WARN="${YELLOW}!${PLAIN}"
+INFO="${CYAN}ℹ${PLAIN}"
+WORKING="${CYAN}◉${PLAIN}"
 
 # ============================================================
-# Banner 和标题
+# 基础输出函数
 # ============================================================
 
-# 显示标题 Banner（紧凑版）
-hg_banner() {
-    clear
-
-    # ANSI Shadow风格 ASCII Art Logo
-    local logo='██╗  ██╗ ██████╗ ████████╗ ██████╗  ██████╗ ██╗
-██║  ██║██╔════╝ ╚══██╔══╝██╔═══██╗██╔═══██╗██║
-███████║██║  ███╗   ██║   ██║   ██║██║   ██║██║
-██╔══██║██║   ██║   ██║   ██║   ██║██║   ██║██║
-██║  ██║╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝███████╗
-╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝
-───────────── by HGIDC ─────────────'
-
-    echo ""
-    # 先渲染Logo为左对齐块（保持ASCII对齐），再整体居中
-    local logo_block=$("$GUM" style --foreground "$PRIMARY_COLOR" --bold --align left "$logo")
-    "$GUM" style --align center "$logo_block"
-
-    # 显示系统信息栏
-    hg_show_sysinfo
+# 打印成功消息
+print_success() {
+    echo -e " ${SUCCESS} ${GREEN}$1${PLAIN}"
 }
 
-# 显示系统信息栏（含资源进度条）
-hg_show_sysinfo() {
-    local hostname=$(hostname 2>/dev/null || echo "N/A")
-    local os_info=$(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 | cut -d' ' -f1-2 || echo "N/A")
-    local local_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "N/A")
-    local cpu_cores=$(nproc 2>/dev/null || echo "?")
-
-    # 获取内存使用情况
-    local mem_info=$(free -m 2>/dev/null | awk '/^Mem:/{printf "%d %d", $3, $2}')
-    local mem_used=$(echo "$mem_info" | cut -d' ' -f1)
-    local mem_total=$(echo "$mem_info" | cut -d' ' -f2)
-    local mem_percent=$((mem_used * 100 / mem_total))
-
-    # 获取磁盘使用情况（根分区）
-    local disk_info=$(df -m / 2>/dev/null | awk 'NR==2{printf "%d %d", $3, $2}')
-    local disk_used=$(echo "$disk_info" | cut -d' ' -f1)
-    local disk_total=$(echo "$disk_info" | cut -d' ' -f2)
-    local disk_percent=$((disk_used * 100 / disk_total))
-
-    # 固定信息行
-    "$GUM" style --foreground "$DIM_COLOR" \
-        "┌─────────────────────────────────────────────────────────────────┐"
-    "$GUM" style --foreground "$DIM_COLOR" \
-        "│ $hostname @ $os_info │ IP: $local_ip │ CPU: ${cpu_cores}c"
-    "$GUM" style --foreground "$DIM_COLOR" \
-        "├─────────────────────────────────────────────────────────────────┤"
-
-    # 内存进度条
-    local mem_bar=$(draw_progress_bar $mem_percent 30)
-    local mem_color=$(get_usage_color $mem_percent)
-    printf "│ MEM: %s %3d%% [%dM/%dM]\n" "$("$GUM" style --foreground "$mem_color" "$mem_bar")" "$mem_percent" "$mem_used" "$mem_total"
-
-    # 磁盘进度条
-    local disk_bar=$(draw_progress_bar $disk_percent 30)
-    local disk_color=$(get_usage_color $disk_percent)
-    printf "│ DISK:%s %3d%% [%dM/%dM]\n" "$("$GUM" style --foreground "$disk_color" "$disk_bar")" "$disk_percent" "$disk_used" "$disk_total"
-
-    "$GUM" style --foreground "$DIM_COLOR" \
-        "└─────────────────────────────────────────────────────────────────┘"
-    echo ""
+# 打印错误消息
+print_error() {
+    echo -e " ${ERROR} ${RED}$1${PLAIN}"
 }
 
-# 绘制进度条
-draw_progress_bar() {
-    local percent=$1
-    local width=$2
-    local filled=$((percent * width / 100))
-    local empty=$((width - filled))
+# 打印警告消息
+print_warn() {
+    echo -e " ${WARN} ${YELLOW}$1${PLAIN}"
+}
+
+# 打印信息消息
+print_info() {
+    echo -e " ${INFO} ${CYAN}$1${PLAIN}"
+}
+
+# 打印工作中状态
+print_working() {
+    echo -e " ${WORKING} $1"
+}
+
+# ============================================================
+# 分隔线和边框
+# ============================================================
+
+# 打印分隔线
+separator() {
+    local width=${1:-65}
+    local char=${2:-─}
+    local line=""
+    for ((i=0; i<width; i++)); do
+        line+="$char"
+    done
+    echo -e "${DIM}${line}${PLAIN}"
+}
+
+# 打印标题（带边框）
+print_title() {
+    local title="$1"
+    local width=65
     
-    local bar=""
-    for ((i=0; i<filled; i++)); do bar+="█"; done
-    for ((i=0; i<empty; i++)); do bar+="░"; done
-    echo "$bar"
-}
-
-# 根据使用率返回颜色
-get_usage_color() {
-    local percent=$1
-    if [ "$percent" -lt 60 ]; then
-        echo "$ACCENT_COLOR"  # 绿色
-    elif [ "$percent" -lt 80 ]; then
-        echo "$WARNING_COLOR"  # 黄色
-    else
-        echo "$ERROR_COLOR"  # 红色
-    fi
-}
-
-# 显示小标题（带清屏）
-hg_title() {
-    local title="${1:-操作}"
     clear
     echo ""
-    "$GUM" style \
-        --foreground "$PRIMARY_COLOR" \
-        --bold \
-        --border "rounded" \
-        --border-foreground "$PRIMARY_COLOR" \
-        --padding "0 2" \
-        "$title"
-    echo ""
-}
-
-# ============================================================
-# 交互组件
-# ============================================================
-
-# 选择菜单（单选）
-hg_choose() {
-    local title="${1:-请选择}"
-    shift
-    local options=("$@")
-
-    # 标题输出到 stderr，不污染返回值
-    echo "" >&2
-    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "$title" >&2
-
-    "$GUM" choose \
-        --cursor="> " \
-        --cursor.foreground "$ACCENT_COLOR" \
-        --item.foreground "$DIM_COLOR" \
-        --selected.foreground "$PRIMARY_COLOR" \
-        "${options[@]}"
-}
-
-# 选择菜单（多选）
-hg_choose_multi() {
-    local title="${1:-请选择（空格多选）}"
-    shift
-    local options=("$@")
-
-    # 标题输出到 stderr，不污染返回值
-    echo "" >&2
-    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "$title" >&2
-
-    "$GUM" choose \
-        --no-limit \
-        --cursor="> " \
-        --cursor.foreground "$ACCENT_COLOR" \
-        --item.foreground "$DIM_COLOR" \
-        --selected.foreground "$PRIMARY_COLOR" \
-        "${options[@]}"
-}
-
-# 文本输入
-hg_input() {
-    local placeholder="${1:-请输入}"
-    local default="${2:-}"
-
-    "$GUM" input \
-        --placeholder "$placeholder" \
-        --value "$default" \
-        --prompt.foreground "$PRIMARY_COLOR" \
-        --cursor.foreground "$ACCENT_COLOR"
-}
-
-# 确认操作（危险操作用红色）
-hg_confirm() {
-    local msg="${1:-确认执行此操作？}"
-    local is_danger="${2:-false}"
-
-    local color="$PRIMARY_COLOR"
-    local select_color="$ACCENT_COLOR"
-    if [ "$is_danger" = "true" ]; then
-        color="$ERROR_COLOR"
-        select_color="$ERROR_COLOR"
+    echo -e "${BLUE}╔$(separator $((width-2)) ═)╗${PLAIN}"
+    
+    # 计算标题居中
+    local title_len=${#title}
+    local padding=$(( (width - 2 - title_len) / 2 ))
+    local left_pad=""
+    local right_pad=""
+    for ((i=0; i<padding; i++)); do
+        left_pad+=" "
+        right_pad+=" "
+    done
+    # 补齐奇数长度
+    if (( (width - 2 - title_len) % 2 == 1 )); then
+        right_pad+=" "
     fi
-
-    # 使用 choose 替代 confirm，实现上下选择
+    
+    echo -e "${BLUE}║${PLAIN}${left_pad}${BOLD}${title}${PLAIN}${right_pad}${BLUE}║${PLAIN}"
+    echo -e "${BLUE}╚$(separator $((width-2)) ═)╝${PLAIN}"
     echo ""
-    "$GUM" style --foreground "$color" --bold "$msg"
+}
+
+# 打印子标题
+print_subtitle() {
+    local title="$1"
+    echo ""
+    echo -e " ${BOLD}${BLUE}[ ${title} ]${PLAIN}"
+    echo ""
+}
+
+# ============================================================
+# Banner
+# ============================================================
+
+print_banner() {
+    local hostname=$(hostname 2>/dev/null || echo "N/A")
+    local os_info=$(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 | cut -d' ' -f1-2 || echo "Linux")
+    local local_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "N/A")
+    
+    clear
+    echo ""
+    echo -e "${BLUE}╔═══════════════════════════════════════════════════════════════╗${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}                                                               ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}██╗  ██╗ ██████╗ ████████╗ ██████╗  ██████╗ ██╗${PLAIN}             ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}██║  ██║██╔════╝ ╚══██╔══╝██╔═══██╗██╔═══██╗██║${PLAIN}             ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}███████║██║  ███╗   ██║   ██║   ██║██║   ██║██║${PLAIN}             ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}██╔══██║██║   ██║   ██║   ██║   ██║██║   ██║██║${PLAIN}             ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}██║  ██║╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝███████╗${PLAIN}        ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}   ${CYAN}╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝${PLAIN}        ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}                                                               ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}              ${BOLD}黑果云运维工具箱${PLAIN} ${DIM}v${VERSION:-1.0.0}${PLAIN}                        ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}║${PLAIN}                                                               ${BLUE}║${PLAIN}"
+    echo -e "${BLUE}╠═══════════════════════════════════════════════════════════════╣${PLAIN}"
+    printf "${BLUE}║${PLAIN}  主机: ${GREEN}%-12s${PLAIN} │ 系统: ${GREEN}%-12s${PLAIN} │ IP: ${GREEN}%-15s${PLAIN}${BLUE}║${PLAIN}\n" "$hostname" "$os_info" "$local_ip"
+    echo -e "${BLUE}╚═══════════════════════════════════════════════════════════════╝${PLAIN}"
+    echo ""
+}
+
+# ============================================================
+# 菜单函数
+# ============================================================
+
+# 打印菜单项
+# 用法: print_menu "菜单项1" "菜单项2" ...
+print_menu() {
+    local -a items=("$@")
+    local width=65
+    local name_width=20
+    local desc_width=35
+    
+    for i in "${!items[@]}"; do
+        local item="${items[$i]}"
+        local num=$((i + 1))
+        
+        # 如果包含 | 分隔符，分离名称和描述
+        if [[ "$item" == *"|"* ]]; then
+            local name="${item%%|*}"
+            local desc="${item#*|}"
+        else
+            local name="$item"
+            local desc=""
+        fi
+        
+        # 格式化输出（对齐）
+        printf "   ${CYAN}❖${PLAIN}  %-${name_width}s ${DIM}%-${desc_width}s${PLAIN} ${BOLD}%d)${PLAIN}\n" "$name" "$desc" "$num"
+    done
+}
+
+# 选择菜单
+# 用法: result=$(select_menu "提示文字" "选项1" "选项2" ...)
+# 返回: 选中的序号（从1开始），0表示取消
+select_menu() {
+    local prompt="$1"
+    shift
+    local -a items=("$@")
+    local count=${#items[@]}
+    
+    echo ""
+    echo -e " ${BOLD}${prompt}${PLAIN}"
+    echo ""
+    print_menu "${items[@]}"
+    echo ""
     
     local choice
-    choice=$("$GUM" choose \
-        --cursor="> " \
-        --cursor.foreground "$select_color" \
-        --selected.foreground "$select_color" \
-        "是" \
-        "否")
+    while true; do
+        echo -ne " ${BOLD}└─ 请输入序号 [ 1-${count} ]：${PLAIN}"
+        read -r choice
         
-    if [ "$choice" == "是" ]; then
+        # 空输入视为取消
+        if [[ -z "$choice" ]]; then
+            echo 0
+            return
+        fi
+        
+        # 验证输入
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$count" ]; then
+            echo "$choice"
+            return
+        else
+            print_warn "请输入有效的序号 (1-${count})"
+        fi
+    done
+}
+
+# 快捷菜单函数（兼容旧代码）
+# 用法: choice=$(menu_select "标题" "选项1" "选项2" ...)
+# 返回: 选中的选项文本
+menu_select() {
+    local title="$1"
+    shift
+    local -a items=("$@")
+    
+    local idx
+    idx=$(select_menu "$title" "${items[@]}")
+    
+    if [[ "$idx" == "0" ]] || [[ -z "$idx" ]]; then
+        echo ""
+    else
+        echo "${items[$((idx-1))]}"
+    fi
+}
+
+# ============================================================
+# 输入函数
+# ============================================================
+
+# 读取用户输入
+# 用法: result=$(input "提示" "默认值")
+input() {
+    local prompt="${1:-请输入}"
+    local default="${2:-}"
+    local result
+    
+    if [[ -n "$default" ]]; then
+        echo -ne " ${BOLD}└─ ${prompt} [${default}]：${PLAIN}"
+    else
+        echo -ne " ${BOLD}└─ ${prompt}：${PLAIN}"
+    fi
+    
+    read -r result
+    
+    if [[ -z "$result" ]]; then
+        echo "$default"
+    else
+        echo "$result"
+    fi
+}
+
+# 确认对话框
+# 用法: if confirm "确认操作?"; then ... fi
+confirm() {
+    local prompt="${1:-确认执行此操作？}"
+    local default="${2:-y}"  # y 或 n
+    local choice
+    
+    if [[ "$default" == "y" ]]; then
+        echo -ne " ${BOLD}└─ ${prompt} [Y/n]：${PLAIN}"
+    else
+        echo -ne " ${BOLD}└─ ${prompt} [y/N]：${PLAIN}"
+    fi
+    
+    read -r choice
+    
+    if [[ -z "$choice" ]]; then
+        choice="$default"
+    fi
+    
+    case "$choice" in
+        [Yy] | [Yy][Ee][Ss])
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# 危险确认（需要输入 YES）
+confirm_danger() {
+    local prompt="${1:-危险操作！确认继续？}"
+    
+    echo ""
+    echo -e " ${RED}${BOLD}⚠ 警告：${prompt}${PLAIN}"
+    echo -ne " ${BOLD}└─ 请输入 ${RED}YES${PLAIN}${BOLD} 确认：${PLAIN}"
+    
+    local choice
+    read -r choice
+    
+    if [[ "$choice" == "YES" ]]; then
         return 0
     else
+        print_warn "已取消"
         return 1
     fi
 }
 
-# 危险确认（红色警告）
-hg_confirm_danger() {
-    local msg="${1:-危险操作！确认继续？}"
-    hg_confirm "$msg" "true"
-    return $?
-}
+# ============================================================
+# 表格输出
+# ============================================================
 
-# 成功提示
-hg_success() {
-    local msg="${1:-操作成功！}"
-    echo ""
-    "$GUM" style \
-        --foreground "$ACCENT_COLOR" \
-        --bold \
-        "[成功] $msg"
-}
-
-# 错误提示
-hg_error() {
-    local msg="${1:-操作失败！}"
-    echo ""
-    "$GUM" style \
-        --foreground "$ERROR_COLOR" \
-        --bold \
-        --border "rounded" \
-        --border-foreground "$ERROR_COLOR" \
-        --padding "0 1" \
-        "[失败] $msg"
-}
-
-# 警告提示
-hg_warn() {
-    local msg="${1:-警告}"
-    echo ""
-    "$GUM" style \
-        --foreground "$WARNING_COLOR" \
-        --bold \
-        "[注意] $msg"
-}
-
-# 信息提示
-hg_info() {
-    local msg="${1:-提示}"
-    "$GUM" style \
-        --foreground "$INFO_COLOR" \
-        "[信息] $msg"
-}
-
-# 格式化输出表格
-hg_table() {
-    "$GUM" table \
-        --border.foreground "$PRIMARY_COLOR" \
-        --header.foreground "$PRIMARY_COLOR" \
-        --cell.foreground "#f8f8f2"
+# 打印表格（使用 column 命令对齐）
+# 用法: print_table "数据" 
+print_table() {
+    local data="$1"
+    echo "$data" | column -t | while IFS= read -r line; do
+        echo -e "   ${CYAN}${line}${PLAIN}"
+    done
 }
 
 # ============================================================
-# 其他工具
+# 进度和等待
 # ============================================================
 
-# 暂停等待用户按键
-hg_pause() {
+# 暂停等待按键
+pause() {
     local msg="${1:-按任意键继续...}"
     echo ""
-    "$GUM" style --foreground "$INFO_COLOR" --italic "$msg"
+    echo -ne " ${DIM}${msg}${PLAIN}"
     read -n 1 -s -r
     echo ""
 }
 
-# 显示帮助信息
-hg_help() {
-    local title="${1:-帮助}"
-    local content="${2:-}"
-
-    "$GUM" style \
-        --border "rounded" \
-        --border-foreground "$INFO_COLOR" \
-        --padding "1" \
-        --margin "1" \
-        "$title
-
-$content"
-}
-
-# 过滤输入（实时搜索）
-hg_filter() {
-    local placeholder="${1:-输入关键词过滤...}"
-
-    "$GUM" filter \
-        --placeholder "$placeholder" \
-        --prompt.foreground "$PRIMARY_COLOR" \
-        --indicator.foreground "$ACCENT_COLOR"
-}
-
-# 加入多个文本
-hg_join() {
-    "$GUM" join --vertical "$@"
-}
-
-# 格式化 Markdown
-hg_format() {
-    "$GUM" format -t markdown
-}
-
-# ============================================================
-# 视觉增强组件
-# ============================================================
-
-# 分隔线（可选标题）
-hg_divider() {
-    local title="${1:-}"
-    local width=60
-    local line=""
+# 简易加载动画（同步执行命令）
+# 用法: spinner "提示文字" command arg1 arg2 ...
+spinner() {
+    local msg="$1"
+    shift
+    local cmd=("$@")
     
-    # 生成分隔线字符
-    for ((i=0; i<width; i++)); do
-        line+="─"
-    done
+    echo -ne " ${WORKING} ${msg}"
     
-    if [ -n "$title" ]; then
-        # 带标题的分隔线
-        local title_len=${#title}
-        local side_len=$(( (width - title_len - 4) / 2 ))
-        local left_line=""
-        local right_line=""
-        for ((i=0; i<side_len; i++)); do
-            left_line+="─"
-            right_line+="─"
-        done
-        "$GUM" style --foreground "$DIM_COLOR" "$left_line┤ $title ├$right_line"
+    # 执行命令
+    if "${cmd[@]}" >/dev/null 2>&1; then
+        echo -e "\r ${SUCCESS} ${msg}"
+        return 0
     else
-        # 纯分隔线
-        "$GUM" style --foreground "$DIM_COLOR" "$line"
+        echo -e "\r ${ERROR} ${msg}"
+        return 1
     fi
 }
 
-# 页脚信息（版本、快捷键提示）
-hg_footer() {
-    local version="${1:-1.0.0}"
-    echo ""
-    "$GUM" style \
-        --foreground "$DIM_COLOR" \
-        --italic \
-        --align "center" \
-        "─────────────────────────────────────────────────────────────
-  HGTool v$version  │  ↑↓ 选择  │  Enter 确认  │  ESC 返回  │  q 退出"
+# ============================================================
+# 兼容性别名（保持旧代码可用）
+# ============================================================
+
+# 兼容旧函数名
+hg_banner() { print_banner; }
+hg_title() { print_title "$1"; }
+hg_success() { print_success "$1"; }
+hg_error() { print_error "$1"; }
+hg_warn() { print_warn "$1"; }
+hg_info() { print_info "$1"; }
+hg_pause() { pause "$1"; }
+hg_confirm() { confirm "$1"; }
+hg_confirm_danger() { confirm_danger "$1"; }
+hg_spin() { spinner "$@"; }
+
+# 核心兼容函数：hg_choose
+# 用法: choice=$(hg_choose "标题" "选项1" "选项2" ...)
+hg_choose() {
+    local title="$1"
+    shift
+    menu_select "$title" "$@"
+}
+
+# 核心兼容函数：hg_input
+hg_input() {
+    input "$1" "$2"
 }

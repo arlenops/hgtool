@@ -59,14 +59,7 @@ get_pkg_manager() {
 # 检查 Root 权限
 check_root_privileges() {
     if [ "$EUID" -ne 0 ]; then
-        if [ -x "${ROOT_DIR}/bin/gum" ]; then
-            "${ROOT_DIR}/bin/gum" style \
-                --foreground "#FFB86C" \
-                --bold \
-                "⚠ 警告: 部分功能需要 root 权限运行"
-        else
-            echo "警告: 部分功能需要 root 权限运行"
-        fi
+        echo -e "\033[33m⚠ 警告: 部分功能需要 root 权限运行\033[0m"
         return 1
     fi
     return 0
