@@ -189,7 +189,7 @@ interactive_menu() {
                 local name="${item%%·····*}"
                 local desc="${item##*·····}"
                 local name_width=$(get_display_width "$name")
-                local padding=$((max_name_width - name_width + 5))
+                local padding=$((max_name_width - name_width + 10))
                 local dots=""
                 for ((j=0; j<padding; j++)); do
                     dots+="·"
