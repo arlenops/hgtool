@@ -111,31 +111,16 @@ print_subtitle() {
 # ============================================================
 
 print_banner() {
-    local hostname=$(hostname 2>/dev/null || echo "N/A")
-    local os_info=$(cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d'"' -f2 | cut -d' ' -f1-2 || echo "Linux")
-    local local_ip=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "N/A")
-    
-    # 截断过长的值
-    hostname="${hostname:0:12}"
-    os_info="${os_info:0:12}"
-    local_ip="${local_ip:0:15}"
-    
     clear
     echo ""
-    echo -e "${BLUE}╔═════════════════════════════════════════════════════════════╗${PLAIN}"
-    echo -e "${BLUE}║                                                             ║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}██╗  ██╗ ██████╗ ████████╗ ██████╗  ██████╗ ██╗${PLAIN}           ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}██║  ██║██╔════╝ ╚══██╔══╝██╔═══██╗██╔═══██╗██║${PLAIN}           ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}███████║██║  ███╗   ██║   ██║   ██║██║   ██║██║${PLAIN}           ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}██╔══██║██║   ██║   ██║   ██║   ██║██║   ██║██║${PLAIN}           ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}██║  ██║╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝███████╗${PLAIN}      ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}   ${CYAN}╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝${PLAIN}      ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║                                                             ║${PLAIN}"
-    echo -e "${BLUE}║${PLAIN}               ${BOLD}黑果云运维工具箱${PLAIN} ${DIM}v${VERSION:-1.0.0}${PLAIN}                     ${BLUE}║${PLAIN}"
-    echo -e "${BLUE}║                                                             ║${PLAIN}"
-    echo -e "${BLUE}╠═════════════════════════════════════════════════════════════╣${PLAIN}"
-    printf "${BLUE}║${PLAIN}  主机: ${GREEN}%-12s${PLAIN} │ 系统: ${GREEN}%-12s${PLAIN} │ IP: ${GREEN}%-13s${PLAIN} ${BLUE}║${PLAIN}\n" "$hostname" "$os_info" "$local_ip"
-    echo -e "${BLUE}╚═════════════════════════════════════════════════════════════╝${PLAIN}"
+    echo -e "${CYAN}  ██╗  ██╗ ██████╗ ████████╗ ██████╗  ██████╗ ██╗${PLAIN}"
+    echo -e "${CYAN}  ██║  ██║██╔════╝ ╚══██╔══╝██╔═══██╗██╔═══██╗██║${PLAIN}"
+    echo -e "${CYAN}  ███████║██║  ███╗   ██║   ██║   ██║██║   ██║██║${PLAIN}"
+    echo -e "${CYAN}  ██╔══██║██║   ██║   ██║   ██║   ██║██║   ██║██║${PLAIN}"
+    echo -e "${CYAN}  ██║  ██║╚██████╔╝   ██║   ╚██████╔╝╚██████╔╝███████╗${PLAIN}"
+    echo -e "${CYAN}  ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝${PLAIN}"
+    echo ""
+    echo -e "  ${DIM}黑果云运维工具箱 v${VERSION:-1.0.0}${PLAIN}"
     echo ""
 }
 
@@ -161,13 +146,8 @@ interactive_menu() {
     tput civis 2>/dev/null
     
     while true; do
-        # 显示提示（输出到 /dev/tty 以便在子shell中也能显示）
+        # 显示菜单（输出到 /dev/tty）
         {
-            echo ""
-            echo -e " ${BOLD}${prompt}${PLAIN}"
-            echo -e " ${DIM}(↑/↓ 移动, Enter 确认, q 取消)${PLAIN}"
-            echo ""
-            
             # 显示菜单项
             for i in "${!items[@]}"; do
                 local item="${items[$i]}"
@@ -183,13 +163,12 @@ interactive_menu() {
                 
                 if [ $i -eq $selected ]; then
                     # 选中项 - 高亮显示
-                    echo -e "   ${GREEN}▶${PLAIN} ${GREEN}${BOLD}${name}${PLAIN}  ${DIM}${desc}${PLAIN}"
+                    echo -e "${GREEN}▶${PLAIN} ${GREEN}${BOLD}${name}${PLAIN}"
                 else
                     # 普通项
-                    echo -e "     ${name}  ${DIM}${desc}${PLAIN}"
+                    echo -e "  ${name}"
                 fi
             done
-            
             echo ""
         } >/dev/tty
         
@@ -233,7 +212,7 @@ interactive_menu() {
         esac
         
         # 移动光标回到菜单开始位置重新绘制
-        echo -ne "\033[$((count + 5))A" >/dev/tty
+        echo -ne "\033[$((count + 1))A" >/dev/tty
     done
 }
 
