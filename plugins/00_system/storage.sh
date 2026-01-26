@@ -255,38 +255,16 @@ resize_partition() {
 show_disk_info() {
     hg_title "磁盘信息"
 
-    # 磁盘列表 - 表格化
-    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "磁盘列表:"
+    # 磁盘列表
+    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "[ 磁盘列表 ]"
     echo ""
-    # 使用逗号分隔格式供 gum table 使用
-    {
-        echo "名称,大小,类型,挂载点,文件系统"
-        lsblk -rno NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE 2>/dev/null | while read -r line; do
-            name=$(echo "$line" | awk '{print $1}')
-            size=$(echo "$line" | awk '{print $2}')
-            type=$(echo "$line" | awk '{print $3}')
-            mount=$(echo "$line" | awk '{print $4}')
-            fstype=$(echo "$line" | awk '{print $5}')
-            echo "$name,$size,$type,${mount:--},${fstype:--}"
-        done
-    } | "$GUM" table \
-        --border.foreground "$PRIMARY_COLOR" \
-        --header.foreground "$PRIMARY_COLOR" \
-        --separator ","
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE 2>/dev/null | column -t | "$GUM" style --foreground "$INFO_COLOR"
     echo ""
 
-    # 磁盘使用情况 - 表格化
-    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "磁盘使用情况:"
+    # 磁盘使用情况
+    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "[ 磁盘使用情况 ]"
     echo ""
-    {
-        echo "设备,容量,已用,可用,使用率,挂载点"
-        df -h 2>/dev/null | grep "^/dev" | while read -r dev size used avail pcent mount; do
-            echo "$dev,$size,$used,$avail,$pcent,$mount"
-        done
-    } | "$GUM" table \
-        --border.foreground "$PRIMARY_COLOR" \
-        --header.foreground "$PRIMARY_COLOR" \
-        --separator ","
+    df -h 2>/dev/null | grep -E "^Filesystem|^文件系统|^/dev" | column -t | "$GUM" style --foreground "$INFO_COLOR"
     echo ""
 
     hg_pause
