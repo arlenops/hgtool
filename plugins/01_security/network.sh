@@ -13,22 +13,22 @@ plugin_main() {
         hg_title "网络安全"
 
         local choice=$(hg_choose "请选择操作" \
-            "🔐 修改 SSH 端口" \
-            "🛡️ 防火墙管理" \
-            "🌐 网络信息" \
-            "🔙 返回主菜单")
+            "修改 SSH 端口" \
+            "防火墙管理" \
+            "网络信息" \
+            "返回主菜单")
 
         case "$choice" in
-            "🔐 修改 SSH 端口")
+            "修改 SSH 端口")
                 change_ssh_port
                 ;;
-            "🛡️ 防火墙管理")
+            "防火墙管理")
                 firewall_manager
                 ;;
-            "🌐 网络信息")
+            "网络信息")
                 show_network_info
                 ;;
-            "🔙 返回主菜单"|"")
+            "返回主菜单"|"")
                 return 0
                 ;;
         esac
@@ -144,14 +144,14 @@ firewall_manager() {
     hg_info "防火墙类型: $fw_type"
 
     local choice=$(hg_choose "选择操作" \
-        "➕ 开放端口" \
-        "➖ 关闭端口" \
-        "📋 查看规则" \
-        "🔄 重载规则" \
-        "🔙 返回")
+        "开放端口" \
+        "关闭端口" \
+        "查看规则" \
+        "重载规则" \
+        "返回")
 
     case "$choice" in
-        "➕ 开放端口")
+        "开放端口")
             local port=$(hg_input "端口号" "如: 80 或 8080-8090")
             local protocol=$(hg_choose "协议" "tcp" "udp" "tcp/udp")
 
@@ -160,7 +160,7 @@ firewall_manager() {
                 hg_success "已开放端口: $port/$protocol"
             fi
             ;;
-        "➖ 关闭端口")
+        "关闭端口")
             local port=$(hg_input "端口号" "如: 80")
             local protocol=$(hg_choose "协议" "tcp" "udp")
 
@@ -169,14 +169,14 @@ firewall_manager() {
                 hg_success "已关闭端口: $port/$protocol"
             fi
             ;;
-        "📋 查看规则")
+        "查看规则")
             show_firewall_rules "$fw_type"
             ;;
-        "🔄 重载规则")
+        "重载规则")
             reload_firewall "$fw_type"
             hg_success "防火墙规则已重载"
             ;;
-        "🔙 返回"|"")
+        "返回"|"")
             return 0
             ;;
     esac

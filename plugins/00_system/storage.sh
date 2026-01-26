@@ -13,22 +13,22 @@ plugin_main() {
         hg_title "存储管理"
 
         local choice=$(hg_choose "请选择操作" \
-            "💿 挂载新磁盘" \
-            "📈 分区扩容" \
-            "📊 磁盘信息" \
-            "🔙 返回主菜单")
+            "挂载新磁盘" \
+            "分区扩容" \
+            "磁盘信息" \
+            "返回主菜单")
 
         case "$choice" in
-            "💿 挂载新磁盘")
+            "挂载新磁盘")
                 mount_new_disk
                 ;;
-            "📈 分区扩容")
+            "分区扩容")
                 resize_partition
                 ;;
-            "📊 磁盘信息")
+            "磁盘信息")
                 show_disk_info
                 ;;
-            "🔙 返回主菜单"|"")
+            "返回主菜单"|"")
                 return 0
                 ;;
         esac
