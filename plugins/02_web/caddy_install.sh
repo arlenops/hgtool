@@ -201,12 +201,7 @@ detect_package_manager() {
 # ============================================================
 
 install_caddy_main() {
-    hg_banner
-    echo ""
-    echo "  ╔═══════════════════════════════════════════╗"
-    echo "  ║           Caddy Web 服务器安装            ║"
-    echo "  ╚═══════════════════════════════════════════╝"
-    echo ""
+    print_title "Caddy Web 服务器安装"
     
     # 检查是否已安装
     local current_version=""
