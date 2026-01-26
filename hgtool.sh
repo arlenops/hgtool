@@ -78,24 +78,20 @@ main_menu() {
         # 构建菜单项
         local -a menu_items=()
         for i in "${!PLUGIN_NAMES[@]}"; do
-            menu_items+=("${PLUGIN_NAMES[$i]}|${PLUGIN_DESCS[$i]}")
+            menu_items+=("${PLUGIN_NAMES[$i]}")
         done
-        menu_items+=("退出程序|Exit")
+        menu_items+=("退出程序")
         
         # 使用交互式菜单
-        local choice
-        choice=$(interactive_menu "请选择要执行的操作" "${menu_items[@]}")
+        interactive_menu "${menu_items[@]}"
         
         # 如果取消返回空，刷新菜单
-        if [[ -z "$choice" ]]; then
+        if [[ -z "$MENU_RESULT" ]]; then
             continue
         fi
         
-        # 提取选择的名称
-        local selected_name="${choice%%|*}"
-        
         # 处理选择
-        if [[ "$selected_name" == "退出程序" ]]; then
+        if [[ "$MENU_RESULT" == "退出程序" ]]; then
             clear
             echo ""
             echo -e " ${GREEN}${BOLD}👋 感谢使用 hgtool！再见！${PLAIN}"
@@ -104,7 +100,7 @@ main_menu() {
         else
             # 查找对应的插件文件
             for i in "${!PLUGIN_NAMES[@]}"; do
-                if [[ "${PLUGIN_NAMES[$i]}" == "$selected_name" ]]; then
+                if [[ "${PLUGIN_NAMES[$i]}" == "$MENU_RESULT" ]]; then
                     local plugin_file="${PLUGIN_FILES[$i]}"
                     if [ -f "$plugin_file" ]; then
                         source "$plugin_file"

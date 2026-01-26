@@ -131,53 +131,48 @@ print_banner() {
 # 交互式选择菜单（上下键移动选择）
 # ============================================================
 
+# 全局变量存储菜单选择结果
+MENU_RESULT=""
+
 # 交互式选择菜单
-# 用法: result=$(interactive_menu "提示文字" "选项1" "选项2" ...)
-# 返回: 选中的选项文本，空表示取消
+# 用法: interactive_menu "选项1" "选项2" ...
+# 结果存储在 MENU_RESULT 变量中
 interactive_menu() {
-    local prompt="$1"
-    shift
     local -a items=("$@")
     local count=${#items[@]}
     local selected=0
     local key=""
     
+    MENU_RESULT=""
+    
     # 隐藏光标
     tput civis 2>/dev/null
     
     while true; do
-        # 显示菜单（输出到 /dev/tty）
-        {
-            # 显示菜单项
-            for i in "${!items[@]}"; do
-                local item="${items[$i]}"
-                
-                # 分离名称和描述
-                if [[ "$item" == *"|"* ]]; then
-                    local name="${item%%|*}"
-                    local desc="${item#*|}"
-                else
-                    local name="$item"
-                    local desc=""
-                fi
-                
-                if [ $i -eq $selected ]; then
-                    # 选中项 - 高亮显示
-                    echo -e "${GREEN}▶${PLAIN} ${GREEN}${BOLD}${name}${PLAIN}"
-                else
-                    # 普通项
-                    echo -e "  ${name}"
-                fi
-            done
-            echo ""
-        } >/dev/tty
+        # 显示菜单
+        for i in "${!items[@]}"; do
+            local item="${items[$i]}"
+            
+            # 分离名称和描述
+            if [[ "$item" == *"|"* ]]; then
+                local name="${item%%|*}"
+            else
+                local name="$item"
+            fi
+            
+            if [ $i -eq $selected ]; then
+                echo -e "${GREEN}▶${PLAIN} ${GREEN}${BOLD}${name}${PLAIN}"
+            else
+                echo -e "  ${name}"
+            fi
+        done
         
-        # 读取按键（从 /dev/tty）
-        IFS= read -rsn1 key </dev/tty
+        # 读取按键
+        IFS= read -rsn1 key
         
         case "$key" in
             $'\x1b')  # ESC 序列开始（方向键）
-                read -rsn2 -t 0.1 key </dev/tty
+                read -rsn2 -t 0.1 key
                 case "$key" in
                     '[A')  # 上键
                         ((selected--))
@@ -198,33 +193,26 @@ interactive_menu() {
                 [ $selected -ge $count ] && selected=0
                 ;;
             '')  # Enter 键
-                # 显示光标
                 tput cnorm 2>/dev/null
-                # 返回选中项（这个输出到 stdout，会被 $() 捕获）
-                echo "${items[$selected]}"
+                MENU_RESULT="${items[$selected]}"
                 return 0
                 ;;
             'q'|'Q')  # q 取消
                 tput cnorm 2>/dev/null
-                echo ""
+                MENU_RESULT=""
                 return 1
                 ;;
         esac
         
-        # 移动光标回到菜单开始位置重新绘制
-        echo -ne "\033[$((count + 1))A" >/dev/tty
+        # 移动光标回到菜单开始位置
+        echo -ne "\033[${count}A"
     done
 }
 
-# 快捷菜单函数（兼容旧代码）
-# 用法: choice=$(menu_select "标题" "选项1" "选项2" ...)
-# 返回: 选中的选项文本
+# 快捷菜单函数
 menu_select() {
-    local title="$1"
-    shift
-    local result
-    result=$(interactive_menu "$title" "$@")
-    echo "$result"
+    interactive_menu "$@"
+    echo "$MENU_RESULT"
 }
 
 # ============================================================
