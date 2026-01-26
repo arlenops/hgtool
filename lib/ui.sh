@@ -142,6 +142,53 @@ hg_title() {
 # 交互组件
 # ============================================================
 
+# 选择菜单（单选）
+hg_choose() {
+    local title="${1:-请选择}"
+    shift
+    local options=("$@")
+
+    echo ""
+    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "$title"
+
+    "$GUM" choose \
+        --cursor="> " \
+        --cursor.foreground "$ACCENT_COLOR" \
+        --item.foreground "$DIM_COLOR" \
+        --selected.foreground "$PRIMARY_COLOR" \
+        "${options[@]}"
+}
+
+# 选择菜单（多选）
+hg_choose_multi() {
+    local title="${1:-请选择（空格多选）}"
+    shift
+    local options=("$@")
+
+    echo ""
+    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "$title"
+
+    "$GUM" choose \
+        --no-limit \
+        --cursor="> " \
+        --cursor.foreground "$ACCENT_COLOR" \
+        --item.foreground "$DIM_COLOR" \
+        --selected.foreground "$PRIMARY_COLOR" \
+        "${options[@]}"
+}
+
+# 文本输入
+hg_input() {
+    local placeholder="${1:-请输入}"
+    local default="${2:-}"
+
+    "$GUM" input \
+        --placeholder "$placeholder" \
+        --value "$default" \
+        --prompt.foreground "$PRIMARY_COLOR" \
+        --cursor.foreground "$ACCENT_COLOR"
+}
+
 # 确认操作（危险操作用红色）
 hg_confirm() {
     local msg="${1:-确认执行此操作？}"
