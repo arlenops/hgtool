@@ -148,8 +148,9 @@ hg_choose() {
     shift
     local options=("$@")
 
-    echo ""
-    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "$title"
+    # 标题输出到 stderr，不污染返回值
+    echo "" >&2
+    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "$title" >&2
 
     "$GUM" choose \
         --cursor="> " \
@@ -165,8 +166,9 @@ hg_choose_multi() {
     shift
     local options=("$@")
 
-    echo ""
-    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "$title"
+    # 标题输出到 stderr，不污染返回值
+    echo "" >&2
+    "$GUM" style --foreground "$PRIMARY_COLOR" --bold "$title" >&2
 
     "$GUM" choose \
         --no-limit \
