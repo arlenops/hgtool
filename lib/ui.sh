@@ -56,6 +56,27 @@ print_working() {
 }
 
 # ============================================================
+# 辅助函数
+# ============================================================
+
+# 计算字符串显示宽度（中文字符占2个宽度）
+get_display_width() {
+    local str="$1"
+    local width=0
+    local char
+    for ((i=0; i<${#str}; i++)); do
+        char="${str:$i:1}"
+        # 检测是否为多字节字符（中文等）
+        if [[ $(printf '%s' "$char" | wc -c) -gt 1 ]]; then
+            ((width+=2))
+        else
+            ((width+=1))
+        fi
+    done
+    echo $width
+}
+
+# ============================================================
 # 分隔线和边框
 # ============================================================
 
@@ -74,14 +95,14 @@ separator() {
 print_title() {
     local title="$1"
     local width=65
-    
+
     clear
     echo ""
     echo -e "${BLUE}╔$(separator $((width-2)) ═)╗${PLAIN}"
-    
-    # 计算标题居中
-    local title_len=${#title}
-    local padding=$(( (width - 2 - title_len) / 2 ))
+
+    # 计算标题居中（使用显示宽度）
+    local title_width=$(get_display_width "$title")
+    local padding=$(( (width - 2 - title_width) / 2 ))
     local left_pad=""
     local right_pad=""
     for ((i=0; i<padding; i++)); do
@@ -89,10 +110,10 @@ print_title() {
         right_pad+=" "
     done
     # 补齐奇数长度
-    if (( (width - 2 - title_len) % 2 == 1 )); then
+    if (( (width - 2 - title_width) % 2 == 1 )); then
         right_pad+=" "
     fi
-    
+
     echo -e "${BLUE}║${PLAIN}${left_pad}${BOLD}${title}${PLAIN}${right_pad}${BLUE}║${PLAIN}"
     echo -e "${BLUE}╚$(separator $((width-2)) ═)╝${PLAIN}"
     echo ""
@@ -146,23 +167,6 @@ interactive_menu() {
     local max_name_width=0
 
     MENU_RESULT=""
-
-    # 计算字符串显示宽度（中文字符占2个宽度）
-    get_display_width() {
-        local str="$1"
-        local width=0
-        local char
-        for ((i=0; i<${#str}; i++)); do
-            char="${str:$i:1}"
-            # 检测是否为多字节字符（中文等）
-            if [[ $(printf '%s' "$char" | wc -c) -gt 1 ]]; then
-                ((width+=2))
-            else
-                ((width+=1))
-            fi
-        done
-        echo $width
-    }
 
     # 计算最大名称显示宽度（用于对齐）
     for item in "${items[@]}"; do
