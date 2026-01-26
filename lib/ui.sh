@@ -124,9 +124,10 @@ get_usage_color() {
     fi
 }
 
-# 显示小标题
+# 显示小标题（带清屏）
 hg_title() {
     local title="${1:-操作}"
+    clear
     echo ""
     "$GUM" style \
         --foreground "$PRIMARY_COLOR" \

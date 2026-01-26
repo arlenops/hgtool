@@ -255,13 +255,20 @@ resize_partition() {
 show_disk_info() {
     hg_title "磁盘信息"
 
-    echo ""
+    # 磁盘列表 - 表格化
     "$GUM" style --foreground "$PRIMARY_COLOR" --bold "磁盘列表:"
-    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE,UUID
+    echo ""
+    lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE | "$GUM" table \
+        --border.foreground "$PRIMARY_COLOR" \
+        --header.foreground "$PRIMARY_COLOR"
     echo ""
 
+    # 磁盘使用情况 - 表格化
     "$GUM" style --foreground "$PRIMARY_COLOR" --bold "磁盘使用情况:"
-    df -h | grep -E "^/dev|^Filesystem"
+    echo ""
+    df -h --output=source,size,used,avail,pcent,target 2>/dev/null | grep -E "^/dev|^Filesystem|^文件系统" | "$GUM" table \
+        --border.foreground "$PRIMARY_COLOR" \
+        --header.foreground "$PRIMARY_COLOR"
     echo ""
 
     hg_pause
