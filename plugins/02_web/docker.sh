@@ -3,7 +3,7 @@
 # Docker 管理插件
 # ============================================================
 
-PLUGIN_NAME="Docker 管理"
+PLUGIN_NAME="Docker 管理·····安装、迁移、清理"
 PLUGIN_DESC="Docker 安装、数据迁移"
 
 plugin_main() {

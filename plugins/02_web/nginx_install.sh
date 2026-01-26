@@ -5,7 +5,7 @@
 # ============================================================
 
 # 脚本元信息（用于菜单显示）
-PLUGIN_NAME="Nginx 管理"
+PLUGIN_NAME="Nginx 管理·····安装Nginx服务器"
 PLUGIN_DESC="安装高性能 Web 服务器 Nginx"
 PLUGIN_CATEGORY="Web"
 

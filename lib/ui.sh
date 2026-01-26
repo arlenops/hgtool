@@ -136,14 +136,23 @@ MENU_RESULT=""
 
 # 交互式选择菜单
 # 用法: interactive_menu "选项1" "选项2" ...
+# 支持格式: "名称·····描述" 会自动对齐描述部分
 # 结果存储在 MENU_RESULT 变量中
 interactive_menu() {
     local -a items=("$@")
     local count=${#items[@]}
     local selected=0
     local key=""
+    local max_name_len=0
     
     MENU_RESULT=""
+    
+    # 计算最大名称长度（用于对齐）
+    for item in "${items[@]}"; do
+        local name="${item%%·····*}"
+        local name_len=${#name}
+        [ $name_len -gt $max_name_len ] && max_name_len=$name_len
+    done
     
     # 隐藏光标
     tput civis 2>/dev/null
@@ -152,18 +161,27 @@ interactive_menu() {
         # 显示菜单
         for i in "${!items[@]}"; do
             local item="${items[$i]}"
+            local display_text=""
             
             # 分离名称和描述
-            if [[ "$item" == *"|"* ]]; then
-                local name="${item%%|*}"
+            if [[ "$item" == *"·····"* ]]; then
+                local name="${item%%·····*}"
+                local desc="${item##*·····}"
+                local name_len=${#name}
+                local padding=$((max_name_len - name_len + 5))
+                local dots=""
+                for ((j=0; j<padding; j++)); do
+                    dots+="·"
+                done
+                display_text="${name}${dots}${desc}"
             else
-                local name="$item"
+                display_text="$item"
             fi
             
             if [ $i -eq $selected ]; then
-                echo -e "${GREEN}▶${PLAIN} ${GREEN}${BOLD}${name}${PLAIN}"
+                echo -e "${GREEN}▶${PLAIN} ${GREEN}${BOLD}${display_text}${PLAIN}"
             else
-                echo -e "  ${name}"
+                echo -e "  ${display_text}"
             fi
         done
         
