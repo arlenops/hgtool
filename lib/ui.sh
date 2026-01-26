@@ -88,7 +88,7 @@ separator() {
     for ((i=0; i<width; i++)); do
         line+="$char"
     done
-    echo -e "${DIM}${line}${PLAIN}"
+    echo -n "$line"
 }
 
 # 打印标题（带边框）
