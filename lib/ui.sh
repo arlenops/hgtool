@@ -190,7 +190,8 @@ interactive_menu() {
                 local desc="${item##*·····}"
                 local nw=$(get_display_width "$name")
                 local padding=$((max_name_width - nw + 20))
-                local dots=$(printf '%*s' "$padding" '' | tr ' ' '·')
+                local dots=""
+                for ((d=0; d<padding; d++)); do dots+="·"; done
                 display_text="${name}${dots}${desc}"
             else
                 display_text="$item"
