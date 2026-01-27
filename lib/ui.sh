@@ -174,16 +174,25 @@ interactive_menu() {
         local name_width=$(get_display_width "$name")
         [ $name_width -gt $max_name_width ] && max_name_width=$name_width
     done
-    
+
     # 隐藏光标
     tput civis 2>/dev/null
-    
+
+    # 首次绘制菜单
+    local first_draw=1
+
     while true; do
-        # 显示菜单
+        # 如果不是首次绘制，先移动光标到菜单开始位置
+        if [ $first_draw -eq 0 ]; then
+            printf "\033[${count}A"
+        fi
+        first_draw=0
+
+        # 显示菜单（使用 printf 避免刷新问题）
         for i in "${!items[@]}"; do
             local item="${items[$i]}"
             local display_text=""
-            
+
             # 分离名称和描述
             if [[ "$item" == *"·····"* ]]; then
                 local name="${item%%·····*}"
@@ -198,17 +207,22 @@ interactive_menu() {
             else
                 display_text="$item"
             fi
-            
+
+            # 清除当前行并输出
+            printf "\033[2K"
             if [ $i -eq $selected ]; then
-                echo -e "${GREEN}▶${PLAIN} ${GREEN}${BOLD}${display_text}${PLAIN}"
+                printf "${GREEN}▶${PLAIN} ${GREEN}${BOLD}%s${PLAIN}\n" "$display_text"
             else
-                echo -e "  ${display_text}"
+                printf "  %s\n" "$display_text"
             fi
         done
-        
+
+        # 清空输入缓冲区
+        read -rs -t 0.01 -n 10000 discard 2>/dev/null || true
+
         # 读取按键
         IFS= read -rsn1 key
-        
+
         case "$key" in
             $'\x1b')  # ESC 序列开始（方向键）
                 read -rsn2 -t 0.1 key
