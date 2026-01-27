@@ -178,87 +178,67 @@ interactive_menu() {
     # 隐藏光标
     tput civis 2>/dev/null
 
-    # 首次绘制菜单
-    local first_draw=1
-
-    while true; do
-        # 如果不是首次绘制，先移动光标到菜单开始位置
-        if [ $first_draw -eq 0 ]; then
-            printf "\033[${count}A"
-        fi
-        first_draw=0
-
-        # 显示菜单（使用 printf 避免刷新问题）
+    # 绘制菜单
+    _draw_menu() {
+        local i
         for i in "${!items[@]}"; do
             local item="${items[$i]}"
             local display_text=""
 
-            # 分离名称和描述
             if [[ "$item" == *"·····"* ]]; then
                 local name="${item%%·····*}"
                 local desc="${item##*·····}"
-                local name_width=$(get_display_width "$name")
-                local padding=$((max_name_width - name_width + 20))
-                local dots=""
-                for ((j=0; j<padding; j++)); do
-                    dots+="·"
-                done
+                local nw=$(get_display_width "$name")
+                local padding=$((max_name_width - nw + 20))
+                local dots=$(printf '%*s' "$padding" '' | tr ' ' '·')
                 display_text="${name}${dots}${desc}"
             else
                 display_text="$item"
             fi
 
-            # 清除当前行并输出
-            printf "\033[2K"
+            # 清除行并输出
             if [ $i -eq $selected ]; then
-                printf "${GREEN}▶${PLAIN} ${GREEN}${BOLD}%s${PLAIN}\n" "$display_text"
+                echo -e "\033[2K${GREEN}▶${PLAIN} ${GREEN}${BOLD}${display_text}${PLAIN}"
             else
-                printf "  %s\n" "$display_text"
+                echo -e "\033[2K  ${display_text}"
             fi
         done
+    }
 
-        # 清空输入缓冲区
-        read -rs -t 0.01 -n 10000 discard 2>/dev/null || true
+    # 首次绘制
+    _draw_menu
 
+    while true; do
         # 读取按键
         IFS= read -rsn1 key
 
         case "$key" in
-            $'\x1b')  # ESC 序列开始（方向键）
+            $'\x1b')  # ESC 序列
                 read -rsn2 -t 0.1 key
                 case "$key" in
-                    '[A')  # 上键
-                        ((selected--))
-                        [ $selected -lt 0 ] && selected=$((count - 1))
-                        ;;
-                    '[B')  # 下键
-                        ((selected++))
-                        [ $selected -ge $count ] && selected=0
-                        ;;
+                    '[A') ((selected--)); [ $selected -lt 0 ] && selected=$((count - 1)) ;;
+                    '[B') ((selected++)); [ $selected -ge $count ] && selected=0 ;;
+                    *) continue ;;
                 esac
                 ;;
-            'k'|'K')  # vim 风格上移
-                ((selected--))
-                [ $selected -lt 0 ] && selected=$((count - 1))
-                ;;
-            'j'|'J')  # vim 风格下移
-                ((selected++))
-                [ $selected -ge $count ] && selected=0
-                ;;
-            '')  # Enter 键
+            'k'|'K') ((selected--)); [ $selected -lt 0 ] && selected=$((count - 1)) ;;
+            'j'|'J') ((selected++)); [ $selected -ge $count ] && selected=0 ;;
+            '')  # Enter
                 tput cnorm 2>/dev/null
                 MENU_RESULT="${items[$selected]}"
                 return 0
                 ;;
-            'q'|'Q')  # q 取消
+            'q'|'Q')
                 tput cnorm 2>/dev/null
                 MENU_RESULT=""
                 return 1
                 ;;
+            *) continue ;;
         esac
-        
-        # 移动光标回到菜单开始位置
+
+        # 回到菜单顶部重绘
         echo -ne "\033[${count}A"
+        _draw_menu
     done
 }
 
