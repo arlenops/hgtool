@@ -154,28 +154,10 @@
                     </div>
                     <div class="mx-auto text-slate-400 text-sm font-mono">root@server:~</div>
                 </div>
-                <div
-                    class="p-6 font-mono text-sm md:text-base text-slate-300 bg-slate-900/95 overflow-hidden min-h-[380px] relative">
-                    <div class="mb-2"><span class="text-green-400">root@server</span><span
-                            class="text-white">:</span><span class="text-blue-400">~</span>$ <span id="typed1"></span>
-                    </div>
-                    <div id="term-response1"
-                        class="hidden text-brand-400 mb-2 font-bold select-none whitespace-pre opacity-0 transition-opacity duration-500 text-xs sm:text-sm">
-                        <span class="text-green-500">▶</span> 系统自检······················健康度检测与报告
-                        软件源管理····················更换国内镜像源
-                        存储管理······················挂载、扩容、占用分析
-                        系统管理······················系统更新、时区、Swap
-                        DNS管理·······················切换、测试、恢复
-                        网络管理······················SSH端口、防火墙、邮件检测
-                        SSH 管理······················SSH配置查看与安全加固
-                        宝塔管理······················安装、密码、挂载数据盘
-                        Caddy管理·····················安装、卸载、状态
-                        Docker管理····················安装、迁移、清理
-                        退出程序
-                    </div>
-                    <div id="term-prompt2" class="hidden mb-2"><span class="text-green-400">root@server</span><span
-                            class="text-white">:</span><span class="text-blue-400">~</span>$ <span id="typed2"></span>
-                    </div>
+                <div class="p-4 sm:p-6 font-mono text-sm md:text-base text-slate-300 bg-slate-900/95 overflow-hidden min-h-[420px] relative focus:outline-none"
+                    tabindex="0" id="interactive-terminal">
+                    <!-- 动态终端内容容器 -->
+                    <div id="terminal-content" class="whitespace-pre flex flex-col items-start w-full"></div>
                 </div>
             </div>
         </div>
@@ -390,36 +372,163 @@
             });
         }
 
-        // Terminal Typing Animation Logic
+        // Interactive Terminal Logic
         document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                new Typed('#typed1', {
-                    strings: ['./hgtool.sh'],
-                    typeSpeed: 50,
-                    showCursor: true,
-                    cursorChar: '█',
-                    onComplete: (self) => {
-                        self.cursor.remove();
-                        setTimeout(() => {
-                            const response = document.getElementById('term-response1');
-                            response.classList.remove('hidden');
-                            // Trigger reflow for transition
-                            void response.offsetWidth;
-                            response.classList.remove('opacity-0');
+            const terminal = document.getElementById('interactive-terminal');
+            const content = document.getElementById('terminal-content');
 
-                            setTimeout(() => {
-                                document.getElementById('term-prompt2').classList.remove('hidden');
-                                new Typed('#typed2', {
-                                    strings: [''],
-                                    typeSpeed: 50,
-                                    showCursor: true,
-                                    cursorChar: '█'
-                                });
-                            }, 800);
-                        }, 500);
+            const menus = {
+                main: {
+                    title: `<span class="text-white font-bold ml-2">黑果云运维工具箱 v1.0.0</span>\n\n`,
+                    items: [
+                        { label: '系统自检······················健康度检测与报告', action: 'sub_syscheck' },
+                        { label: '软件源管理····················更换国内镜像源', action: 'sub_repo' },
+                        { label: '存储管理······················挂载、扩容、占用分析', action: 'sub_storage' },
+                        { label: '系统管理······················系统更新、时区、Swap', action: 'sub_sysmgr' },
+                        { label: 'DNS管理·······················切换、测试、恢复', action: 'sub_dns' },
+                        { label: '网络管理······················SSH端口、防火墙、邮件检测', action: 'sub_net' },
+                        { label: 'SSH 管理······················SSH配置查看与安全加固', action: 'sub_ssh' },
+                        { label: '宝塔管理······················安装、密码、挂载数据盘', action: 'sub_bt' },
+                        { label: 'Caddy管理·····················安装、卸载、状态', action: 'sub_caddy' },
+                        { label: 'Docker管理····················安装、迁移、清理', action: 'sub_docker' },
+                        { label: '退出程序', action: 'exit' }
+                    ]
+                },
+                sub_bt: {
+                    title: `<span class="text-white font-bold ml-2">【 宝塔管理 】</span>\n\n`,
+                    items: [
+                        { label: '一键极速安装宝塔面板', action: 'msg_bt_install' },
+                        { label: '查看/修改面板密码', action: 'msg_bt_pwd' },
+                        { label: '数据盘挂载至 /www', action: 'msg_bt_disk' },
+                        { label: '返回上级菜单', action: 'main' }
+                    ]
+                },
+                sub_docker: {
+                    title: `<span class="text-white font-bold ml-2">【 Docker管理 】</span>\n\n`,
+                    items: [
+                        { label: '安装 Docker & Docker Compose', action: 'msg_docker_install' },
+                        { label: '配置 Docker 镜像加速器', action: 'msg_docker_mirror' },
+                        { label: '清理未使用的镜像与容器', action: 'msg_docker_clean' },
+                        { label: '返回上级菜单', action: 'main' }
+                    ]
+                }
+            };
+
+            let currentMenu = 'intro';
+            let selectedIndex = 0;
+            let isAnimating = true;
+
+            function renderMenu() {
+                if (isAnimating) return;
+
+                const menu = menus[currentMenu];
+                if (!menu) return;
+
+                let html = menu.title;
+                menu.items.forEach((item, index) => {
+                    if (index === selectedIndex) {
+                        html += `<div class="text-brand-400 font-bold"><span class="text-green-500 mr-2">▶</span>${item.label}</div>`;
+                    } else {
+                        html += `<div class="text-slate-400"><span class="mr-2">&nbsp;&nbsp;</span>${item.label}</div>`;
                     }
                 });
-            }, 1500);
+
+                html += `\n<div class="text-slate-500 mt-4 text-xs">使用 ↑ ↓ 方向键选择，Enter 键确认</div>`;
+                content.innerHTML = html;
+            }
+
+            function typeWriter(text, elementId, callback) {
+                let i = 0;
+                content.innerHTML = `<div class="mb-2"><span class="text-green-400">root@server</span><span class="text-white">:</span><span class="text-blue-400">~</span>$ <span id="${elementId}"></span><span class="animate-pulse">█</span></div>`;
+                const el = document.getElementById(elementId);
+
+                function type() {
+                    if (i < text.length) {
+                        el.innerHTML += text.charAt(i);
+                        i++;
+                        setTimeout(type, 50);
+                    } else {
+                        setTimeout(callback, 500);
+                    }
+                }
+                type();
+            }
+
+            // Initial Animation
+            typeWriter('./hgtool.sh', 'typed-cmd', () => {
+                isAnimating = false;
+                currentMenu = 'main';
+                renderMenu();
+            });
+
+            // Keyboard Navigation
+            terminal.addEventListener('keydown', (e) => {
+                if (isAnimating || !menus[currentMenu]) return;
+
+                const menu = menus[currentMenu];
+
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : menu.items.length - 1;
+                    renderMenu();
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex < menu.items.length - 1) ? selectedIndex + 1 : 0;
+                    renderMenu();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const action = menu.items[selectedIndex].action;
+
+                    if (action === 'exit') {
+                        content.innerHTML = `<div class="mb-2"><span class="text-green-400">root@server</span><span class="text-white">:</span><span class="text-blue-400">~</span>$ </div><div class="text-slate-300">已退出 HGTool</div>`;
+                        isAnimating = true;
+                        setTimeout(() => {
+                            isAnimating = false;
+                            currentMenu = 'main';
+                            selectedIndex = 0;
+                            renderMenu();
+                        }, 2000);
+                    } else if (action === 'main') {
+                        currentMenu = 'main';
+                        selectedIndex = 0;
+                        renderMenu();
+                    } else if (menus[action]) {
+                        // Go to submenu
+                        currentMenu = action;
+                        selectedIndex = 0;
+                        renderMenu();
+                    } else if (action.startsWith('msg_')) {
+                        // Simulate running a command
+                        isAnimating = true;
+                        content.innerHTML = `<div class="text-green-400 mb-2">正在执行该操作，请稍候...</div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-brand-500 rounded-full animate-bounce"></div>
+                            <div class="w-2 h-2 bg-brand-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-2 h-2 bg-brand-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>`;
+
+                        setTimeout(() => {
+                            isAnimating = false;
+                            renderMenu();
+                        }, 1500);
+                    } else {
+                        // Unimplemented item handling
+                        isAnimating = true;
+                        content.innerHTML = `<div class="text-yellow-400 mb-2">该功能在网页端仅作演示，请在真实终端中体验。</div>`;
+                        setTimeout(() => {
+                            isAnimating = false;
+                            renderMenu();
+                        }, 1500);
+                    }
+                }
+            });
+
+            // Hover effect to show it's interactive
+            terminal.addEventListener('mouseenter', () => {
+                if (!isAnimating) {
+                    terminal.focus();
+                }
+            });
         });
     </script>
 </body>
