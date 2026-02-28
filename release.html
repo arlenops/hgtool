@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN" class="scroll-smooth">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,7 +37,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         .glass-nav {
             background: rgba(255, 255, 255, 0.8);
@@ -44,17 +45,21 @@
             -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.3);
         }
+
         .hero-pattern {
             background-color: #ffffff;
             background-image: radial-gradient(#dbeafe 1px, transparent 1px);
             background-size: 24px 24px;
         }
+
         .terminal-window {
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
+
         .feature-card {
             transition: all 0.3s ease;
         }
+
         .feature-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.1), 0 10px 10px -5px rgba(37, 99, 235, 0.04);
@@ -62,6 +67,7 @@
         }
     </style>
 </head>
+
 <body class="bg-slate-50 text-slate-800 font-sans antialiased overflow-x-hidden">
 
     <!-- Navbar -->
@@ -69,18 +75,22 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
                         <i class="fa-solid fa-terminal text-xl"></i>
                     </div>
                     <span class="font-bold text-2xl tracking-tight text-slate-900">HGTool</span>
                 </div>
                 <div class="hidden md:flex space-x-8">
-                    <a href="#features" class="text-slate-600 hover:text-brand-600 font-medium transition-colors">核心特性</a>
-                    <a href="#installation" class="text-slate-600 hover:text-brand-600 font-medium transition-colors">快速安装</a>
+                    <a href="#features"
+                        class="text-slate-600 hover:text-brand-600 font-medium transition-colors">核心特性</a>
+                    <a href="#installation"
+                        class="text-slate-600 hover:text-brand-600 font-medium transition-colors">快速安装</a>
                     <a href="#docs" class="text-slate-600 hover:text-brand-600 font-medium transition-colors">文档支持</a>
                 </div>
                 <div>
-                    <a href="https://github.com/arlenops/hgtool" target="_blank" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900 text-white font-medium hover:bg-slate-800 transition-all shadow-md hover:shadow-lg">
+                    <a href="https://github.com/arlenops/hgtool" target="_blank"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900 text-white font-medium hover:bg-slate-800 transition-all shadow-md hover:shadow-lg">
                         <i class="fa-brands fa-github text-lg"></i>
                         <span>GitHub</span>
                     </a>
@@ -93,40 +103,49 @@
     <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden hero-pattern">
         <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-brand-100/50 blur-3xl"></div>
         <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-brand-50/70 blur-3xl"></div>
-        
+
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center max-w-4xl mx-auto">
-                <div data-aos="fade-down" data-aos-duration="1000" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 text-brand-600 font-medium text-sm mb-8 border border-brand-100 shadow-sm">
+                <div data-aos="fade-down" data-aos-duration="1000"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 text-brand-600 font-medium text-sm mb-8 border border-brand-100 shadow-sm">
                     <span class="flex h-2 w-2 relative">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-500 opacity-75"></span>
+                        <span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-500 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-600"></span>
                     </span>
                     v1.0.0 现已正式发布
                 </div>
-                
-                <h1 data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100" class="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight leading-tight mb-8">
+
+                <h1 data-aos="fade-up" data-aos-duration="1000" data-aos-delay="100"
+                    class="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight leading-tight mb-8">
                     黑果云 <br class="md:hidden" />
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-brand-700">现代运维工具箱</span>
+                    <span
+                        class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-brand-700">现代运维工具箱</span>
                 </h1>
-                
-                <p data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200" class="text-lg md:text-xl text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+
+                <p data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200"
+                    class="text-lg md:text-xl text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed">
                     基于 Bash 开发的模块化运维工具集，零外部依赖，赋予你极简、高效、自动化的服务器管理体验。
                 </p>
-                
-                <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300" class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <a href="#installation" class="w-full sm:w-auto px-8 py-4 rounded-full bg-brand-600 text-white font-bold text-lg hover:bg-brand-700 transition-all shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 flex items-center justify-center gap-2 transform hover:-translate-y-1">
+
+                <div data-aos="fade-up" data-aos-duration="1000" data-aos-delay="300"
+                    class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <a href="#installation"
+                        class="w-full sm:w-auto px-8 py-4 rounded-full bg-brand-600 text-white font-bold text-lg hover:bg-brand-700 transition-all shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 flex items-center justify-center gap-2 transform hover:-translate-y-1">
                         <i class="fa-solid fa-rocket"></i>
                         立即开始
                     </a>
-                    <a href="#features" class="w-full sm:w-auto px-8 py-4 rounded-full bg-white text-slate-700 font-bold text-lg border border-slate-200 hover:border-brand-300 hover:text-brand-600 transition-all shadow-sm hover:shadow flex items-center justify-center gap-2">
+                    <a href="#features"
+                        class="w-full sm:w-auto px-8 py-4 rounded-full bg-white text-slate-700 font-bold text-lg border border-slate-200 hover:border-brand-300 hover:text-brand-600 transition-all shadow-sm hover:shadow flex items-center justify-center gap-2">
                         <i class="fa-solid fa-book-open"></i>
                         了解更多
                     </a>
                 </div>
             </div>
-            
+
             <!-- Terminal Preview -->
-            <div data-aos="fade-up" data-aos-duration="1200" data-aos-delay="500" class="mt-20 max-w-4xl mx-auto terminal-window rounded-xl overflow-hidden bg-slate-900 border border-slate-800 animate-float">
+            <div data-aos="fade-up" data-aos-duration="1200" data-aos-delay="500"
+                class="mt-20 max-w-4xl mx-auto terminal-window rounded-xl overflow-hidden bg-slate-900 border border-slate-800 animate-float">
                 <div class="flex items-center px-4 py-3 bg-slate-800 border-b border-slate-700">
                     <div class="flex space-x-2">
                         <div class="w-3 h-3 rounded-full bg-red-500"></div>
@@ -135,20 +154,26 @@
                     </div>
                     <div class="mx-auto text-slate-400 text-sm font-mono">root@server:~</div>
                 </div>
-                <div class="p-6 font-mono text-sm md:text-base text-slate-300 bg-slate-900/95 overflow-hidden h-64 relative">
-                    <div class="mb-2"><span class="text-green-400">root@server</span><span class="text-white">:</span><span class="text-blue-400">~</span>$ <span id="typed1"></span></div>
-                    <div id="term-response1" class="hidden text-brand-400 mb-2 font-bold select-none whitespace-pre opacity-0 transition-opacity duration-500">
-   __  __  ____ _____           _ 
-  / / / / / __ '/__  / __  __  / /
- / /_/ / / /_/ /  / / / /_/ / / / 
-/___,_/  \__, /  /_/  \__,_/ /_/  
-        /____/                    
-
-[1] 系统优化      [4] Docker管理
-[2] Nginx助手     [5] 数据备份
-[3] 安全加固      [6] 退出程序
+                <div
+                    class="p-6 font-mono text-sm md:text-base text-slate-300 bg-slate-900/95 overflow-hidden min-h-[380px] relative">
+                    <div class="mb-2"><span class="text-green-400">root@server</span><span
+                            class="text-white">:</span><span class="text-blue-400">~</span>$ <span id="typed1"></span>
                     </div>
-                    <div id="term-prompt2" class="hidden mb-2"><span class="text-green-400">root@server</span><span class="text-white">:</span><span class="text-blue-400">~</span>$ <span id="typed2"></span></div>
+                    <div id="term-response1"
+                        class="hidden text-brand-400 mb-2 font-bold select-none whitespace-pre opacity-0 transition-opacity duration-500">
+                        __ __ ____ _____ _
+                        / / / / / __ '/__ / __ __ / /
+                        / /_/ / / /_/ / / / / /_/ / / /
+                        /___,_/ \__, / /_/ \__,_/ /_/
+                        /____/
+
+                        [1] 系统优化 [4] Docker管理
+                        [2] Nginx助手 [5] 数据备份
+                        [3] 安全加固 [6] 退出程序
+                    </div>
+                    <div id="term-prompt2" class="hidden mb-2"><span class="text-green-400">root@server</span><span
+                            class="text-white">:</span><span class="text-blue-400">~</span>$ <span id="typed2"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -162,37 +187,49 @@
                 <h3 class="text-3xl md:text-4xl font-bold text-slate-900 mb-4">重新定义运维体验</h3>
                 <p class="text-slate-600 text-lg">HGTool 针对现代 Linux 环境优化，提供开箱即用的模块化功能体验。</p>
             </div>
-            
+
             <div class="grid md:grid-cols-3 gap-8">
                 <!-- Feature 1 -->
-                <div data-aos="fade-up" data-aos-delay="100" class="feature-card bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-brand-50 rounded-full z-0 transition-transform group-hover:scale-150 duration-500"></div>
+                <div data-aos="fade-up" data-aos-delay="100"
+                    class="feature-card bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-brand-50 rounded-full z-0 transition-transform group-hover:scale-150 duration-500">
+                    </div>
                     <div class="relative z-10">
-                        <div class="w-14 h-14 bg-brand-100 rounded-xl flex items-center justify-center text-brand-600 text-2xl mb-6 shadow-sm">
+                        <div
+                            class="w-14 h-14 bg-brand-100 rounded-xl flex items-center justify-center text-brand-600 text-2xl mb-6 shadow-sm">
                             <i class="fa-solid fa-cube"></i>
                         </div>
                         <h4 class="text-xl font-bold text-slate-900 mb-3">模块化架构</h4>
                         <p class="text-slate-600 leading-relaxed">基于插件目录结构设计，功能高度解耦，随插随用，方便二次开发与扩展维护。</p>
                     </div>
                 </div>
-                
+
                 <!-- Feature 2 -->
-                <div data-aos="fade-up" data-aos-delay="200" class="feature-card bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-brand-50 rounded-full z-0 transition-transform group-hover:scale-150 duration-500"></div>
+                <div data-aos="fade-up" data-aos-delay="200"
+                    class="feature-card bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-brand-50 rounded-full z-0 transition-transform group-hover:scale-150 duration-500">
+                    </div>
                     <div class="relative z-10">
-                        <div class="w-14 h-14 bg-brand-100 rounded-xl flex items-center justify-center text-brand-600 text-2xl mb-6 shadow-sm">
+                        <div
+                            class="w-14 h-14 bg-brand-100 rounded-xl flex items-center justify-center text-brand-600 text-2xl mb-6 shadow-sm">
                             <i class="fa-solid fa-feather-pointed"></i>
                         </div>
                         <h4 class="text-xl font-bold text-slate-900 mb-3">开箱即用</h4>
                         <p class="text-slate-600 leading-relaxed">纯 Bash 编写，无需依赖 Python/Node 等外部运行环境，一行命令瞬间启动。</p>
                     </div>
                 </div>
-                
+
                 <!-- Feature 3 -->
-                <div data-aos="fade-up" data-aos-delay="300" class="feature-card bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-brand-50 rounded-full z-0 transition-transform group-hover:scale-150 duration-500"></div>
+                <div data-aos="fade-up" data-aos-delay="300"
+                    class="feature-card bg-white p-8 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group">
+                    <div
+                        class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-brand-50 rounded-full z-0 transition-transform group-hover:scale-150 duration-500">
+                    </div>
                     <div class="relative z-10">
-                        <div class="w-14 h-14 bg-brand-100 rounded-xl flex items-center justify-center text-brand-600 text-2xl mb-6 shadow-sm">
+                        <div
+                            class="w-14 h-14 bg-brand-100 rounded-xl flex items-center justify-center text-brand-600 text-2xl mb-6 shadow-sm">
                             <i class="fa-solid fa-palette"></i>
                         </div>
                         <h4 class="text-xl font-bold text-slate-900 mb-3">优雅终端 UI</h4>
@@ -205,39 +242,45 @@
 
     <!-- Installation Section -->
     <section id="installation" class="py-24 bg-slate-50 relative border-y border-slate-200">
-        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-64 h-64 bg-brand-200/40 rounded-full blur-3xl -z-10"></div>
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-64 h-64 bg-brand-200/40 rounded-full blur-3xl -z-10">
+        </div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col lg:flex-row items-center gap-16">
                 <!-- Text Content -->
                 <div class="lg:w-1/2" data-aos="fade-right">
-                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-slate-600 text-sm mb-6 border border-slate-200 shadow-sm">
+                    <div
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-slate-600 text-sm mb-6 border border-slate-200 shadow-sm">
                         <i class="fa-solid fa-bolt text-yellow-500"></i> 秒级部署
                     </div>
                     <h3 class="text-3xl md:text-4xl font-bold text-slate-900 mb-6 leading-tight">一条命令<br />开启自动化旅程</h3>
-                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">无需繁琐的配置与依赖安装，我们将所有必须的模块打包。只要服务器支持 Bash，复制粘贴即可运行。</p>
-                    
+                    <p class="text-slate-600 text-lg mb-8 leading-relaxed">无需繁琐的配置与依赖安装，我们将所有必须的模块打包。只要服务器支持
+                        Bash，复制粘贴即可运行。</p>
+
                     <ul class="space-y-4 mb-8">
                         <li class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                            <div
+                                class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-check text-sm"></i>
                             </div>
                             <span class="text-slate-700">自动检测并适配系统环境 (CentOS/Ubuntu/Debian)</span>
                         </li>
                         <li class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                            <div
+                                class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-check text-sm"></i>
                             </div>
                             <span class="text-slate-700">基于 GitHub 分发，确保最新安全版本</span>
                         </li>
                         <li class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                            <div
+                                class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-check text-sm"></i>
                             </div>
                             <span class="text-slate-700">自带自我更新机制与环境修复</span>
                         </li>
                     </ul>
                 </div>
-                
+
                 <!-- Code Snippet -->
                 <div class="lg:w-1/2 w-full" data-aos="fade-left">
                     <div class="bg-slate-900 rounded-2xl shadow-xl overflow-hidden border border-slate-800">
@@ -248,7 +291,8 @@
                                 <div class="w-3 h-3 rounded-full bg-green-500"></div>
                             </div>
                             <span class="text-xs text-slate-400 font-mono">Bash</span>
-                            <button onclick="copyInstallCmd()" id="copyBtn" class="text-slate-400 hover:text-white transition-colors p-1" title="复制命令">
+                            <button onclick="copyInstallCmd()" id="copyBtn"
+                                class="text-slate-400 hover:text-white transition-colors p-1" title="复制命令">
                                 <i class="fa-regular fa-copy"></i>
                             </button>
                         </div>
@@ -256,7 +300,8 @@
                             <pre class="font-mono text-sm leading-relaxed overflow-x-auto text-slate-300"><code id="installCmd"><span class="text-pink-400">git</span> clone https://github.com/arlenops/hgtool.git
 <span class="text-pink-400">cd</span> hgtool
 <span class="text-pink-400">sudo</span> bash hgtool.sh</code></pre>
-                            <div id="copyTooltip" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-brand-600 text-white px-3 py-1.5 rounded-md text-sm font-medium opacity-0 transition-opacity pointer-events-none">
+                            <div id="copyTooltip"
+                                class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-brand-600 text-white px-3 py-1.5 rounded-md text-sm font-medium opacity-0 transition-opacity pointer-events-none">
                                 已复制到剪贴板!
                             </div>
                         </div>
@@ -268,23 +313,27 @@
 
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white">
+                <div
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white">
                     <i class="fa-solid fa-terminal text-sm"></i>
                 </div>
                 <span class="font-bold text-xl tracking-tight text-slate-900">HGTool</span>
             </div>
-            
+
             <p class="text-slate-500 text-sm">
-                &copy; <span id="year"></span> 黑果云. All rights reserved. 
+                &copy; <span id="year"></span> 黑果云. All rights reserved.
             </p>
-            
+
             <div class="flex space-x-4">
-                <a href="#" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 transition-colors">
+                <a href="#"
+                    class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 transition-colors">
                     <i class="fa-brands fa-github text-lg"></i>
                 </a>
-                <a href="#" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 transition-colors">
+                <a href="#"
+                    class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 transition-colors">
                     <i class="fa-brands fa-discord text-lg"></i>
                 </a>
             </div>
@@ -296,7 +345,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
     <!-- Typed.js for Terminal Animation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
-    
+
     <script>
         // Init AOS
         AOS.init({
@@ -325,13 +374,13 @@
             navigator.clipboard.writeText(code).then(() => {
                 const btn = document.getElementById('copyBtn');
                 const tooltip = document.getElementById('copyTooltip');
-                
+
                 // Show tooltip
                 tooltip.classList.remove('opacity-0');
-                
+
                 // Change icon temporarily
                 btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i>';
-                
+
                 setTimeout(() => {
                     tooltip.classList.add('opacity-0');
                     btn.innerHTML = '<i class="fa-regular fa-copy"></i>';
@@ -355,7 +404,7 @@
                             // Trigger reflow for transition
                             void response.offsetWidth;
                             response.classList.remove('opacity-0');
-                            
+
                             setTimeout(() => {
                                 document.getElementById('term-prompt2').classList.remove('hidden');
                                 new Typed('#typed2', {
@@ -372,4 +421,5 @@
         });
     </script>
 </body>
+
 </html>
