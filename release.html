@@ -394,22 +394,87 @@
                         { label: '退出程序', action: 'exit' }
                     ]
                 },
+                sub_repo: {
+                    title: `<span class="text-white font-bold ml-2">【 软件源管理 】</span>\n\n`,
+                    items: [
+                        { label: '中科大源·····中国科学技术大学', action: 'msg_repo_1' },
+                        { label: '清华源·····清华大学TUNA', action: 'msg_repo_2' },
+                        { label: '阿里云源·····阿里云镜像', action: 'msg_repo_3' },
+                        { label: '华为云源·····华为云镜像', action: 'msg_repo_4' },
+                        { label: '腾讯云源·····腾讯云镜像', action: 'msg_repo_5' },
+                        { label: '官方源·····恢复默认源', action: 'msg_repo_6' },
+                        { label: '查看当前源·····显示源配置', action: 'msg_repo_7' },
+                        { label: '返回主菜单', action: 'main' }
+                    ]
+                },
+                sub_storage: {
+                    title: `<span class="text-white font-bold ml-2">【 存储管理 】</span>\n\n`,
+                    items: [
+                        { label: '挂载新磁盘·····格式化并挂载磁盘', action: 'msg_storage_mount' },
+                        { label: '分区扩容·····扩展分区容量', action: 'msg_storage_expand' },
+                        { label: '占用分析·····查找大文件大目录', action: 'msg_storage_analyze' },
+                        { label: '磁盘信息·····查看磁盘详情', action: 'msg_storage_info' },
+                        { label: '返回主菜单', action: 'main' }
+                    ]
+                },
+                sub_sysmgr: {
+                    title: `<span class="text-white font-bold ml-2">【 系统管理 】</span>\n\n`,
+                    items: [
+                        { label: '系统更新·····更新系统软件包', action: 'msg_sysmgr_update' },
+                        { label: '时区设置·····配置系统时区', action: 'msg_sysmgr_tz' },
+                        { label: 'Swap 管理·····虚拟内存配置', action: 'msg_sysmgr_swap' },
+                        { label: '系统信息·····查看系统详情', action: 'msg_sysmgr_info' },
+                        { label: '返回主菜单', action: 'main' }
+                    ]
+                },
+                sub_net: {
+                    title: `<span class="text-white font-bold ml-2">【 网络管理 】</span>\n\n`,
+                    items: [
+                        { label: '修改 SSH 端口·····更改远程连接端口', action: 'msg_net_sshport' },
+                        { label: '防火墙管理·····端口开放与关闭', action: 'msg_net_fw' },
+                        { label: '邮件端口检测·····检测25端口是否可用', action: 'msg_net_mail' },
+                        { label: '网络信息·····查看网络详情', action: 'msg_net_info' },
+                        { label: '返回主菜单', action: 'main' }
+                    ]
+                },
+                sub_ssh: {
+                    title: `<span class="text-white font-bold ml-2">【 SSH 管理 】</span>\n\n`,
+                    items: [
+                        { label: '允许 Root 登录·····配置 Root 权限', action: 'msg_ssh_root' },
+                        { label: '开启/关闭密码认证·····配置可用登录方式', action: 'msg_ssh_pwd' },
+                        { label: '开启/关闭密钥认证·····配置密钥登录', action: 'msg_ssh_key' },
+                        { label: '返回主菜单', action: 'main' }
+                    ]
+                },
                 sub_bt: {
                     title: `<span class="text-white font-bold ml-2">【 宝塔管理 】</span>\n\n`,
                     items: [
-                        { label: '一键极速安装宝塔面板', action: 'msg_bt_install' },
-                        { label: '查看/修改面板密码', action: 'msg_bt_pwd' },
-                        { label: '数据盘挂载至 /www', action: 'msg_bt_disk' },
-                        { label: '返回上级菜单', action: 'main' }
+                        { label: '安装宝塔·····一键安装宝塔面板', action: 'msg_bt_install' },
+                        { label: '卸载宝塔·····完全卸载宝塔面板', action: 'msg_bt_uninstall' },
+                        { label: '忘记密码·····重置面板密码', action: 'msg_bt_pwd' },
+                        { label: '修改端口·····更改面板访问端口', action: 'msg_bt_port' },
+                        { label: '挂载数据盘·····自动挂载并迁移数据', action: 'msg_bt_disk' },
+                        { label: '面板信息·····查看面板详情', action: 'msg_bt_info' },
+                        { label: '返回主菜单', action: 'main' }
+                    ]
+                },
+                sub_caddy: {
+                    title: `<span class="text-white font-bold ml-2">【 Caddy管理 】</span>\n\n`,
+                    items: [
+                        { label: '安装 Caddy·····安装最新版 Caddy', action: 'msg_caddy_install' },
+                        { label: '卸载 Caddy·····卸载并清理配置', action: 'msg_caddy_uninstall' },
+                        { label: '运行状态·····查看 Caddy 运行状态', action: 'msg_caddy_status' },
+                        { label: '返回主菜单', action: 'main' }
                     ]
                 },
                 sub_docker: {
                     title: `<span class="text-white font-bold ml-2">【 Docker管理 】</span>\n\n`,
                     items: [
-                        { label: '安装 Docker & Docker Compose', action: 'msg_docker_install' },
-                        { label: '配置 Docker 镜像加速器', action: 'msg_docker_mirror' },
-                        { label: '清理未使用的镜像与容器', action: 'msg_docker_clean' },
-                        { label: '返回上级菜单', action: 'main' }
+                        { label: '官方脚本安装·····使用官方源', action: 'msg_docker_install_off' },
+                        { label: '阿里云镜像安装·····国内加速', action: 'msg_docker_install_ali' },
+                        { label: '清理悬空镜像·····删除无标签镜像', action: 'msg_docker_clean_dangling' },
+                        { label: '清理所有未使用·····彻底清理', action: 'msg_docker_clean_all' },
+                        { label: '返回主菜单', action: 'main' }
                     ]
                 }
             };
