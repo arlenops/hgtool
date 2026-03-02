@@ -89,10 +89,10 @@
                     <a href="#docs" class="text-slate-600 hover:text-brand-600 font-medium transition-colors">文档支持</a>
                 </div>
                 <div>
-                    <a href="https://github.com/arlenops/hgtool" target="_blank"
+                    <a href="#installation"
                         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900 text-white font-medium hover:bg-slate-800 transition-all shadow-md hover:shadow-lg">
-                        <i class="fa-brands fa-github text-lg"></i>
-                        <span>GitHub</span>
+                        <i class="fa-solid fa-download text-lg"></i>
+                        <span>获取工具</span>
                     </a>
                 </div>
             </div>
@@ -253,7 +253,7 @@
                                 class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-check text-sm"></i>
                             </div>
-                            <span class="text-slate-700">基于 GitHub 分发，确保最新安全版本</span>
+                            <span class="text-slate-700">私有化分发，确保稳定安全版本</span>
                         </li>
                         <li class="flex items-center gap-3">
                             <div
@@ -281,9 +281,8 @@
                             </button>
                         </div>
                         <div class="p-6 relative group">
-                            <pre class="font-mono text-sm leading-relaxed overflow-x-auto text-slate-300"><code id="installCmd"><span class="text-pink-400">git</span> clone https://github.com/arlenops/hgtool.git
-<span class="text-pink-400">cd</span> hgtool
-<span class="text-pink-400">sudo</span> bash hgtool.sh</code></pre>
+                            <pre
+                                class="font-mono text-sm leading-relaxed overflow-x-auto text-slate-300"><code id="installCmd"><span class="text-pink-400">curl</span> -sSL https://api.hgcloud.net/install.sh | <span class="text-pink-400">sudo bash</span></code></pre>
                             <div id="copyTooltip"
                                 class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-brand-600 text-white px-3 py-1.5 rounded-md text-sm font-medium opacity-0 transition-opacity pointer-events-none">
                                 已复制到剪贴板!
@@ -312,14 +311,6 @@
             </p>
 
             <div class="flex space-x-4">
-                <a href="#"
-                    class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 transition-colors">
-                    <i class="fa-brands fa-github text-lg"></i>
-                </a>
-                <a href="#"
-                    class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-brand-50 hover:text-brand-600 transition-colors">
-                    <i class="fa-brands fa-discord text-lg"></i>
-                </a>
             </div>
         </div>
     </footer>
